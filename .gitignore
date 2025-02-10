@@ -1,5 +1,7 @@
-.exe
-.dat
-.vscode
+*.exe
+*.dat
+*.vscode
+*.class
 exec
-.class
+*.in
+*.out
