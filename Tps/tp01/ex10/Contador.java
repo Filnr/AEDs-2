@@ -14,7 +14,9 @@ public class Contador{
 	}
 
 	public static int contaPalavras(String entrada){
+		// Cria uma variavel que recebera o valor da soma, incia com 1 representando a primeira palavra
 		int qtPalavras = 1;
+		// Busca em todo o vetor, espaços que significa a presença de uma outra palavra
 		for(int i = 0; i < entrada.length(); i++){
 			if(entrada.charAt(i) == ' '){
 				qtPalavras++;
@@ -24,6 +26,7 @@ public class Contador{
 	}
 
 	public static void main(String[] args){
+		//Trocando a entrada padrão para ler corretamente a entrada
 		Scanner ler = new Scanner(System.in, "UTF-8");
 		String entrada = ler.nextLine();
 		while(!ehFim(entrada)){
