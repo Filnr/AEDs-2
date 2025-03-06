@@ -1,16 +1,16 @@
 import java.util.*;
 public class Soma {
-    public static boolean ehFim(String entrada) {
-        //Função que verifica se a entrada é o FIM
-        //Inicialmente apenas compara se a entrada tem o tamanho certo para ser FIM depois verificaa string
-        boolean fim = false;
-        if (entrada.length() == 3) {
-            if ((entrada.charAt(0) == 'F') && (entrada.charAt(1) == 'I') && (entrada.charAt(2) == 'M')) {
-                fim = true;
+        public static boolean ehFim(String entrada) {
+            //Função que verifica se a entrada é o FIM
+            //Inicialmente apenas compara se a entrada tem o tamanho certo para ser FIM depois verificaa string
+            boolean fim = false;
+            if (entrada.length() == 3) {
+                if ((entrada.charAt(0) == 'F') && (entrada.charAt(1) == 'I') && (entrada.charAt(2) == 'M')) {
+                    fim = true;
+                }
             }
+            return fim;
         }
-        return fim;
-    }
     public static int fazSoma(String entrada){
         // Cria um int para que ele some cada numero da string
         int soma = 0;
