@@ -1,157 +1,182 @@
 import java.util.Scanner;
 
 public class Booleano {
-    public static int analisaExp(String entrada) {
-        boolean encontrouIni = false;
-        int i = 0;
-        while (i < entrada.length() && !encontrouIni) {
-            if (entrada.charAt(i) == '(') {
-                encontrouIni = true;
-            } else {
-                i++;
-            }
-        }
-        return i;
-    }
     
-    public static int analisaFinal(String entrada, int inicio) {
-        boolean encontrouFim = false;
-        while (inicio < entrada.length() && !encontrouFim) {
-            if (entrada.charAt(inicio) == ')') {
-                encontrouFim = true;
-            } else {
-                inicio++;
-            }
-        }
-        return inicio;
-    }
-    
-    public static String processaNot(String entrada, int inicio, int fim) {
+    public static boolean avaliarExpressao(String expressao) {
         String resultado = "";
-        for (int i = 0; i < entrada.length(); i++) {
-            if (i == inicio - 3) {
-                if (entrada.charAt(inicio + 1) == '0' && (inicio + 1) < entrada.length()) {
-                    resultado += '1';
-                } else {
-                    resultado += '0';
+        int inicio = 0, fim = 0;
+
+        while (expressao.length() > 1) {
+            // Localizar o próximo parêntese de abertura
+            inicio = -1;
+            for (int i = 0; i < expressao.length(); i++) {
+                if (expressao.charAt(i) == '(') {
+                    inicio = i;
                 }
-            } else if (i > inicio && i <= fim) {
-                resultado += "";
-            } else {
-                resultado += entrada.charAt(i);
+            }
+            
+            if (inicio == -1) {
+                break; // Não há mais parênteses para processar
+            }
+
+            // Localizar o próximo parêntese de fechamento após o de abertura
+            fim = -1;
+            for (int i = inicio; i < expressao.length(); i++) {
+                if (expressao.charAt(i) == ')') {
+                    fim = i;
+                    break;
+                }
+            }
+            
+            if (fim == -1) {
+                break; // Não há parêntese de fechamento correspondente
+            }
+
+            // Verificar qual operação está sendo realizada
+            resultado = "";
+            
+            // Operação NOT
+            if (inicio >= 3 && expressao.charAt(inicio - 1) == 't' && 
+                expressao.charAt(inicio - 2) == 'o' && expressao.charAt(inicio - 3) == 'n') {
+                for (int i = 0; i < expressao.length(); i++) {
+                    if (i == (inicio - 3)) {
+                        // Negar o valor dentro do parêntese
+                        if (inicio + 1 < expressao.length() && expressao.charAt(inicio + 1) == '0') {
+                            resultado += '1';
+                        } else {
+                            resultado += '0';
+                        }
+                    } else if (i > (inicio - 3) && i <= fim) {
+                        // Pular os caracteres da expressão processada
+                    } else {
+                        resultado += expressao.charAt(i);
+                    }
+                }
+            }
+            // Operação AND
+            else if (inicio >= 3 && expressao.charAt(inicio - 1) == 'd' && 
+                    expressao.charAt(inicio - 2) == 'n' && expressao.charAt(inicio - 3) == 'a') {
+                for (int i = 0; i < expressao.length(); i++) {
+                    if (i == (inicio - 3)) {
+                        // Verificar se todos os operandos são 1
+                        boolean todosUm = true;
+                        
+                        // Verifica se há espaço suficiente para processar
+                        if (inicio + 1 < expressao.length() && inicio + 3 < expressao.length() && fim - 1 >= 0) {
+                            // Verifica se todos os valores são 1
+                            if (expressao.charAt(inicio + 1) != '1' || 
+                                expressao.charAt(inicio + 3) != '1' || 
+                                expressao.charAt(fim - 1) != '1') {
+                                todosUm = false;
+                            }
+                        } else {
+                            todosUm = false;
+                        }
+                        
+                        resultado += todosUm ? '1' : '0';
+                    } else if (i > (inicio - 3) && i <= fim) {
+                        // Pular os caracteres da expressão processada
+                    } else {
+                        resultado += expressao.charAt(i);
+                    }
+                }
+            }
+            // Operação OR
+            else if (inicio >= 2 && expressao.charAt(inicio - 1) == 'r' && expressao.charAt(inicio - 2) == 'o') {
+                for (int i = 0; i < expressao.length(); i++) {
+                    if (i == (inicio - 2)) {
+                        // Verificar se pelo menos um operando é 1
+                        boolean algumUm = false;
+                        
+                        // Verifica se há espaço suficiente para processar
+                        if (inicio + 1 < expressao.length()) {
+                            // Verifica se algum valor é 1
+                            for (int j = inicio + 1; j < fim; j += 2) {
+                                if (j < expressao.length() && expressao.charAt(j) == '1') {
+                                    algumUm = true;
+                                    break;
+                                }
+                            }
+                        }
+                        
+                        resultado += algumUm ? '1' : '0';
+                    } else if (i > (inicio - 2) && i <= fim) {
+                        // Pular os caracteres da expressão processada
+                    } else {
+                        resultado += expressao.charAt(i);
+                    }
+                }
+            }
+            
+            expressao = removerEspacos(resultado);
+        }
+
+        // Retorna true se o resultado final for 1
+        return expressao.length() > 0 && expressao.charAt(0) == '1';
+    }
+
+    public static String removerEspacos(String texto) {
+        String resultado = "";
+        for (int i = 0; i < texto.length(); i++) {
+            if (texto.charAt(i) != ' ') {
+                resultado += texto.charAt(i);
             }
         }
         return resultado;
     }
-    
-    public static String processaAND(String entrada, int inicio, int fim) {
-        String resultado = "";
-        for (int i = 0; i < entrada.length(); i++) {
-            if (i == (inicio - 3) && (inicio + 3) < entrada.length() && (fim - 1 >= 0)) {
-                if (entrada.charAt(inicio + 1) == '1' && entrada.charAt(inicio + 3) == '1'
-                        && entrada.charAt(fim - 1) == '1') {
-                    resultado += '1';
-                } else {
-                    resultado += '0';
-                }
-            } else if (i > (inicio - 3) && i <= fim) {
-                resultado += "";
-            } else {
-                resultado += entrada.charAt(i);
-            }
-        }
-        return resultado;
-    }
-    
-    public static String processaOR(String entrada, int inicio, int fim) {
-        String resultado = "";
-        for (int i = 0; i < entrada.length(); i++) {
-            if (i == (inicio - 2) && (inicio + 3) < entrada.length() && (fim - 3) >= 0) {
-                if (entrada.charAt(inicio + 1) == '1'
-                        || entrada.charAt(inicio + 3) == '1'
-                        || entrada.charAt(fim - 1) == '1'
-                        || entrada.charAt(fim - 3) == '1') {
-                    resultado += '1';
-                } else {
-                    resultado += '0';
-                }
-            } else if (i > (inicio - 2) && i <= fim) {
-                resultado += "";
-            } else {
-                resultado += entrada.charAt(i);
-            }
-        }
-        return resultado;
-    }
-    
-    public static boolean avaliarExpressao(String entrada) {
-        String resultado = "";
-        while (entrada.length() > 1) {
-            int inicio = analisaExp(entrada);
-            int fim = analisaFinal(entrada, inicio);
-            if ((inicio - 2) >= 0) {
-                if (entrada.charAt(inicio - 2) == 'o' && entrada.charAt(inicio - 1) == 't') {
-                    resultado = processaNot(entrada, inicio, fim);
-                } else if (entrada.charAt(inicio - 2) == 'n' && entrada.charAt(inicio - 1) == 'd') {
-                    resultado = processaAND(entrada, inicio, fim);
-                } else if (entrada.charAt(inicio - 2) == 'o' && entrada.charAt(inicio - 1) == 'r') {
-                    resultado = processaOR(entrada, inicio, fim);
-                }
-            }
-            entrada = formataString(resultado);
-        }
-        return entrada.charAt(0) == '1';
-    }
-    
-    public static String formataString(String entrada) {
-        String saida = "";
-        for (int i = 0; i < entrada.length(); i++) {
-            if (entrada.charAt(i) != ' ') {
-                saida += entrada.charAt(i);
-            }
-        }
-        return saida;
-    }
-    
+
     public static void main(String[] args) {
         Scanner leitor = new Scanner(System.in);
-        String entrada = formataString(leitor.nextLine());
+        String entrada = removerEspacos(leitor.nextLine());
         
-        while (entrada.charAt(0) != '0') {
-            char A = entrada.charAt(1);
-            char B = entrada.charAt(2);
-            char C = (entrada.charAt(0) == '3') ? entrada.charAt(3) : '*';
-            String exp = "";
-            int inicio;
-            boolean tem3 = false;
+        while (entrada.length() > 0 && entrada.charAt(0) != '0') {
+            String expressaoBooleana = " ";
             
-            if (entrada.charAt(0) == '3') {
-                inicio = 4;
-                tem3 = true;
-            } else {
-                inicio = 3;
+            // Extrair os valores das variáveis
+            char A = '0';
+            char B = '0';
+            char C = '*';
+            
+            if (entrada.length() > 1) {
+                A = entrada.charAt(1);
             }
             
-            for (int i = inicio; i < entrada.length(); i++) {
-                char letra = entrada.charAt(i);
-                if (letra == 'A') {
-                    exp += A;
-                } else if (letra == 'B') {
-                    exp += B;
-                } else if (letra == 'C' && tem3) {
-                    exp += C;
+            if (entrada.length() > 2) {
+                B = entrada.charAt(2);
+            }
+            
+            boolean temC = entrada.length() > 0 && entrada.charAt(0) == '3';
+            if (temC && entrada.length() > 3) {
+                C = entrada.charAt(3);
+            }
+            
+            // Definir o índice de início para processar a expressão
+            int inicioExp = temC ? 4 : 3;
+            
+            // Substituir as variáveis pelos seus valores
+            for (int i = inicioExp; i < entrada.length(); i++) {
+                char atual = entrada.charAt(i);
+                
+                if (atual == 'A') {
+                    expressaoBooleana += A;
+                } else if (atual == 'B') {
+                    expressaoBooleana += B;
+                } else if (atual == 'C' && temC) {
+                    expressaoBooleana += C;
                 } else {
-                    exp += letra;
+                    expressaoBooleana += atual;
                 }
             }
             
-            if (avaliarExpressao(exp)) {
+            // Avaliar a expressão e imprimir o resultado
+            if (avaliarExpressao(expressaoBooleana)) {
                 System.out.println("1");
             } else {
                 System.out.println("0");
             }
             
-            entrada = formataString(leitor.nextLine());
+            // Ler a próxima entrada
+            entrada = removerEspacos(leitor.nextLine());
         }
         
         leitor.close();
