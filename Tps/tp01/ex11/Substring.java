@@ -13,13 +13,7 @@ public class Substring {
         }
         return fim;
     }
-
-    public static void limpaArray(char[] letras) {
-        for (int i = 0; i < letras.length; i++) {
-            letras[i] = '\0';
-        }
-    }
-
+    
     public static int encontraSub(String entrada) {
         int qt = 0;
         int maior = 0;
