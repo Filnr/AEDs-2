@@ -58,7 +58,7 @@ public class Anagrama {
         if (str1.length() != str2.length()) {
             isAnagrama = false;
         } else {
-            // Cria 2 vetores de char para conseaguir realizar a ordenação
+            // Ordena os vetores para que sejam facilmente comparados
             char[] string1 = new char[str1.length()];
             char[] string2 = new char[str2.length()];
             preencheVetor(string1, str1);
@@ -100,12 +100,12 @@ public class Anagrama {
                 i++;
             }
             if (ehAnagrama(str1, str2)) {
-                System.out.println("SIM");
+                MyIO.println("SIM");
             } else {
-                System.out.println("NAO");
+                MyIO.println("NÃO");
             }
             entrada = ler.nextLine();
         }
-
+        ler.close();
     }
 }
