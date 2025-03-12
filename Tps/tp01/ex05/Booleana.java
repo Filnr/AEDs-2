@@ -15,7 +15,7 @@ public class Booleana{
             }
             if (inicio == -1) {
                 // Caso não tenha mais parenteses, encerra a função
-                break;
+                return false;
             }
             fim = -1;
             for (int i = inicio; i < expBool.length(); i++) {
@@ -25,7 +25,7 @@ public class Booleana{
                 }
             }
             if (fim == -1) {
-                break;
+                return false;
             }
             // Verificar qual operação está sendo realizada
             resultado = "";

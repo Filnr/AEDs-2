@@ -40,7 +40,7 @@ public class Substring {
             }
             // se houver letras repetidas, encerra o loop
             else if(qtIguais > 0){
-                i = entrada.length();
+                
             }
         }
         return qt;
