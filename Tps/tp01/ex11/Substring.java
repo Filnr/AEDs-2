@@ -18,7 +18,8 @@ public class Substring {
         int qt = 0;
         int maior = 0;
         char[] letras = new char[entrada.length()];
-        int inicio = 0; // Índice do início da substring sem repetição
+        int inicio = 0;
+        // Índice do início da substring sem repetição
         for (int i = 0; i < entrada.length(); i++) {
             char atual = entrada.charAt(i);
             boolean repetido = false;
@@ -27,13 +28,11 @@ public class Substring {
             while (j < qt) {
                 if (letras[j] == atual) {
                     repetido = true;
-                    // Atualiza o índice de início para o próximo da repetição
                     inicio = j + 1;
                 }
                 j++;
             }
             if (repetido) {
-                // Atualiza o maior tamanho antes de reiniciar a contagem
                 if (qt - inicio > maior) {
                     maior = qt - inicio;
                 }
@@ -41,7 +40,6 @@ public class Substring {
             // Adiciona o caractere à lista de caracteres únicos da substring
             letras[qt] = atual;
             qt++;
-            // Atualiza o maior tamanho encontrado
             if (qt - inicio > maior) {
                 maior = qt - inicio;
             }
@@ -49,7 +47,8 @@ public class Substring {
         return maior;
     }
 
-    public static void main(String[] args) {
+    pu1
+    lic static void main(String[] args) {
         // Função responsavel por comandar o funcionamento do programa
         Scanner ler = new Scanner(System.in, "UTF-8");
         String entrada = ler.nextLine();

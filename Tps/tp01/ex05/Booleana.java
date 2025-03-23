@@ -1,9 +1,10 @@
 import java.util.Scanner;
 
-public class Booleana{
-    
+public class Booleana {
+
     public static boolean interpretaExp(String expBool) {
-        // Função responsavel por interpretar a expressão booleana e retornar o valor booleano
+        // Função responsavel por interpretar a expressão booleana e retornar o valor
+        // booleano
         String resultado = "";
         int inicio = 0, fim = 0;
         while (expBool.length() > 1) {
@@ -30,8 +31,8 @@ public class Booleana{
             // Verificar qual operação está sendo realizada
             resultado = "";
             // Processador responsavel por calcular o operador NOT
-            if (inicio >= 3 && expBool.charAt(inicio - 1) == 't' && 
-                expBool.charAt(inicio - 2) == 'o' && expBool.charAt(inicio - 3) == 'n') {
+            if (inicio >= 3 && expBool.charAt(inicio - 1) == 't' &&
+                    expBool.charAt(inicio - 2) == 'o' && expBool.charAt(inicio - 3) == 'n') {
                 for (int i = 0; i < expBool.length(); i++) {
                     if (i == (inicio - 3)) {
                         // Troca os valores das variaveis
@@ -48,15 +49,15 @@ public class Booleana{
                 }
             }
             // Processador responsavel por calcular o operador AND
-            else if (inicio >= 3 && expBool.charAt(inicio - 1) == 'd' && 
+            else if (inicio >= 3 && expBool.charAt(inicio - 1) == 'd' &&
                     expBool.charAt(inicio - 2) == 'n' && expBool.charAt(inicio - 3) == 'a') {
                 for (int i = 0; i < expBool.length(); i++) {
                     if (i == (inicio - 3)) {
                         boolean todosUm = true;
                         if (inicio + 1 < expBool.length() && inicio + 3 < expBool.length() && fim - 1 >= 0) {
-                            if (expBool.charAt(inicio + 1) != '1' || 
-                                expBool.charAt(inicio + 3) != '1' || 
-                                expBool.charAt(fim - 1) != '1') {
+                            if (expBool.charAt(inicio + 1) != '1' ||
+                                    expBool.charAt(inicio + 3) != '1' ||
+                                    expBool.charAt(fim - 1) != '1') {
                                 todosUm = false;
                             }
                         } else {
@@ -99,7 +100,8 @@ public class Booleana{
     }
 
     public static String removerEspacos(String texto) {
-        // Remove os espaços para que não atrapalhe a leitura, e nem aumente o custo de operação
+        // Remove os espaços para que não atrapalhe a leitura, e nem aumente o custo de
+        // operação
         String resultado = "";
         for (int i = 0; i < texto.length(); i++) {
             if (texto.charAt(i) != ' ') {
@@ -130,16 +132,15 @@ public class Booleana{
             }
             // Define o indice de inicio a depender se possui 2 ou 3 variaveis
             int inicioExp;
-            if(temC){
+            if (temC) {
                 inicioExp = 4;
-            }
-            else{
+            } else {
                 inicioExp = 3;
             }
-            // Substitui as letras das variaveis pelo valor 
+            // Substitui as letras das variaveis pelo valor
             for (int i = inicioExp; i < entrada.length(); i++) {
                 char atual = entrada.charAt(i);
-                
+
                 if (atual == 'A') {
                     expressaoBooleana += A;
                 } else if (atual == 'B') {

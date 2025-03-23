@@ -75,8 +75,24 @@ public class BooleanaRec {
         return processaNOT(exp, posicao, posicao);
     }
 
-    public static String processaAND(String exp, int inicio, int posicao){
-        resultado
+    private static String processaAND(String exp, int inicio, int pos){
+        String resultado = "";
+        char letra;
+        if(pos < exp.length()){
+            if(pos == inicio){
+                pos += 4;
+                if(exp.charAt(pos) == '1' && exp.charAt(pos+2) == '1'){
+                    resultado += '1';
+                }
+                else{
+                    resultado += '0';
+                }
+            }
+        }
+    }
+
+    public static String processaAND(String exp, int inicio){
+        return processaAND(exp, inicio, 0);
     }
 
     public static String interpretaExp(String exp, int posicao) {
