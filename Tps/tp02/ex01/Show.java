@@ -34,43 +34,45 @@ public class Show {
         String caminho = "temp/disneyplus.csv";
         String linha = "";
         int contador = 0;
-    
+        boolean encontrado = false;
         try (BufferedReader ler = new BufferedReader(new FileReader(caminho))) {
-            while ((linha = ler.readLine()) != null) {
+            while ((linha = ler.readLine()) != null && !encontrado) {
                 if (contador == id) {
                     leDados(linha);
-                    break; // opcional: para parar após encontrar
+                    encontrado = true;
                 }
                 contador++;
             }
         } catch (IOException erro) {
             erro.printStackTrace();
         }
-    }    
+    }
 
     private int contaAtores(String linha, int posicao) {
-        // Função resposavel por ler quantos conjuntos de palavras tem por meio da virgula
+        // Função resposavel por ler quantos conjuntos de palavras tem por meio da
+        // virgula
         // É usada para ler a quantidade de atores e categorias
         int qtAtores = 1;
-        while (linha.charAt(posicao) != '"') {
+        while (posicao < linha.length() && linha.charAt(posicao) != '"') {
             if (linha.charAt(posicao) == ',') {
                 qtAtores++;
             }
+            posicao++;
         }
         return qtAtores;
     }
 
     public void leDados(String linha) {
-        show_ID = "";
         int pos = 0;
         // le a entrada enquanto não ler o ',' e depois pula o ','
-        while (linha.charAt(pos) != ',') {
+        show_ID = "";
+        while (pos < linha.length() && linha.charAt(pos) != ',') {
             show_ID += linha.charAt(pos);
             pos++;
         }
         pos++;
         // Se a primeira letra lida for M, o tipo será Movie e senão TV
-        if (linha.charAt(pos) == 'M') {
+        if (pos < linha.length() && linha.charAt(pos) == 'M') {
             type = "Movie";
             pos += 6;
         } else {
@@ -79,23 +81,23 @@ public class Show {
         }
 
         title = "";
-        while (linha.charAt(pos) != ',') {
+        while (pos < linha.length() && linha.charAt(pos) != ',') {
             title += linha.charAt(pos);
             pos++;
         }
         pos++;
         // leitura dos diretores
         director = "";
-        if (linha.charAt(pos) != ',') {
+        if (pos < linha.length() && linha.charAt(pos) != ',') {
             if (linha.charAt(pos) == '"') {
                 pos++;
-                while (linha.charAt(pos) != '"') {
+                while (pos < linha.length() && linha.charAt(pos) != '"') {
                     director += linha.charAt(pos);
                     pos++;
                 }
                 pos += 2;
             } else {
-                while (linha.charAt(pos) != ',') {
+                while (pos < linha.length() && linha.charAt(pos) != ',') {
                     director += linha.charAt(pos);
                     pos++;
                 }
@@ -105,19 +107,35 @@ public class Show {
             pos++;
         }
         // Elenco
-        if (linha.charAt(pos) != ',') {
-            cast = new String[contaAtores(linha, pos)];
-            int ator = 0;
-            pos++;
-            while (linha.charAt(pos) != '"') {
-                while (linha.charAt(pos) != ',') {
-                    cast[ator] += linha.charAt(pos);
+        if (pos < linha.length() && linha.charAt(pos) != ',') {
+            if (linha.charAt(pos) == '"') {
+                pos++;
+                cast = new String[contaAtores(linha, pos)];
+                int ator = 0;
+                for (int i = 0; i < cast.length; i++)
+                    cast[i] = "";
+                while (pos < linha.length() && linha.charAt(pos) != '"') {
+                    while (pos < linha.length() && linha.charAt(pos) != ',' && linha.charAt(pos) != '"') {
+                        cast[ator] += linha.charAt(pos);
+                        pos++;
+                    }
+                    if (pos < linha.length() && linha.charAt(pos) == ',') {
+                        pos++;
+                        ator++;
+                    }
+                }
+                if (pos < linha.length())
+                    pos += 2;
+            } else {
+                cast = new String[1];
+                cast[0] = "";
+                while (pos < linha.length() && linha.charAt(pos) != ',') {
+                    cast[0] += linha.charAt(pos);
                     pos++;
                 }
-                pos++;
-                ator++;
+                if (pos < linha.length())
+                    pos++;
             }
-            pos += 2;
         } else {
             cast = new String[0];
             pos++;
@@ -179,18 +197,31 @@ public class Show {
             duration += linha.charAt(pos);
             pos++;
         }
-        pos += 2;
+        pos++;
 
         // Categorias
-        listed_in = new String[contaAtores(linha, pos)];
-        int categoria = 0;
-        while (linha.charAt(pos) != '"') {
-            while (linha.charAt(pos) != ',') {
-                listed_in[categoria] += linha.charAt(pos);
+        if (linha.charAt(pos) != '"') {
+            listed_in = new String[1];
+            listed_in[0] = "";
+            while (pos < linha.length() && linha.charAt(pos) != ',') {
+                listed_in[0] += linha.charAt(pos);
                 pos++;
             }
+
+        } else {
             pos++;
-            categoria++;
+            listed_in = new String[contaAtores(linha, pos)];
+            int categoria = 0;
+            for (int i = 0; i < listed_in.length; i++)
+                listed_in[i] = "";
+            while (pos < linha.length() && linha.charAt(pos) != '"' && categoria < listed_in.length) {
+                while (pos < linha.length() && linha.charAt(pos) != ',') {
+                    listed_in[categoria] += linha.charAt(pos);
+                    pos++;
+                }
+                pos++;
+                categoria++;
+            }
         }
     }
 
@@ -203,12 +234,12 @@ public class Show {
         System.out.println(type);
         System.out.println(title);
         System.out.println(director);
-        System.out.println(cast);
+        System.out.println(Arrays.toString(cast));
         System.out.println(country);
         System.out.println(data_added);
         System.out.println(release_year);
         System.out.println(rating);
         System.out.println(duration);
-        System.out.println(listed_in);
+        System.out.println(Arrays.toString(listed_in));
     }
 }
