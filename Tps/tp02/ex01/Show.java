@@ -5,16 +5,104 @@ import java.io.*;
 //simple date format e date
 public class Show {
     private String show_ID;
-    String type;
-    String title;
-    String director;
-    String[] cast;
-    String country;
-    Date data_added;
-    int release_year;
-    String rating;
-    String duration;
-    String[] listed_in;
+    private String type;
+    private String title;
+    private String director;
+    private String[] cast;
+    private String country;
+    private Date data_added;
+    private int release_year;
+    private String rating;
+    private String duration;
+    private String[] listed_in;
+
+    public void setID(String id) {
+        this.show_ID = id;
+    }
+
+    public void setType(String type) {
+        this.type = type;
+    }
+
+    public void setTitle(String title) {
+        this.title = title;
+    }
+
+    public void setDirector(String director) {
+        this.director = director;
+    }
+
+    public void setCast(String[] cast) {
+        this.cast = cast;
+    }
+
+    public void setCountry(String country) {
+        this.country = country;
+    }
+
+    public void setDate(Date data_added) {
+        this.data_added = data_added;
+    }
+
+    public void setRating(String rating) {
+        this.rating = rating;
+    }
+
+    public void setDuration(String duration) {
+        this.duration = duration;
+    }
+
+    public void setListed(String[] listed_in) {
+        this.listed_in = listed_in;
+    }
+
+    public void setRelease(int year) {
+        this.release_year = year;
+    }
+
+    public String getType() {
+        return this.type;
+    }
+
+    public String getTitle() {
+        return this.title;
+    }
+
+    public String getDirector() {
+        return this.director;
+    }
+
+    public String[] getCast() {
+        return this.cast;
+    }
+
+    public String getCountry(){
+        return this.country;
+    }
+
+    public Date getData_added() {
+        return this.data_added;
+    }
+
+    public String getDuration() {
+        return this.duration;
+    }
+
+    public String[] getListed_in() {
+        return listed_in;
+    }
+
+    public String getRating() {
+        return rating;
+    }
+
+    public int getRelease_year() {
+        return release_year;
+    }
+
+    public String getShow_ID() {
+        return show_ID;
+    }
 
     public Show() {
         show_ID = "";
