@@ -33,7 +33,7 @@ public class Show {
     }
 
     public void setCast(String[] cast) {
-        this.cast = cast;
+        this.cast = cast.clone();
     }
 
     public void setCountry(String country) {
@@ -57,7 +57,7 @@ public class Show {
     }
 
     public void setListed(String[] listed_in) {
-        this.listed_in = listed_in;
+        this.listed_in = listed_in.clone();
     }
 
     public void setRelease(int year) {
@@ -126,7 +126,7 @@ public class Show {
         try (BufferedReader ler = new BufferedReader(new FileReader(caminho))) {
             while ((linha = ler.readLine()) != null && !encontrado) {
                 if (contador == id) {
-                    leDados(linha);
+                    ler(linha);
                     encontrado = true;
                 }
                 contador++;
@@ -150,7 +150,7 @@ public class Show {
         return qtAtores;
     }
 
-    public void leDados(String linha) {
+    public void ler(String linha) {
         int pos = 0;
         // le a entrada enquanto não ler o ',' e depois pula o ','
         String ID = "";
@@ -324,7 +324,22 @@ public class Show {
     }
 
     public Show(String entrada) {
-        leDados(entrada);
+        ler(entrada);
+    }
+
+    public Show clone(){
+        Show clonado = new Show();
+        clonado.show_ID = this.show_ID;
+        clonado.cast = this.cast.clone();
+        clonado.country = this.country;
+        clonado.data_added = this.data_added;
+        clonado.director = this.director;
+        clonado.duration = this.duration;
+        clonado.rating = this.rating;
+        clonado.release_year = this.release_year;
+        clonado.type = this.type;
+        clonado.listed_in = this.listed_in.clone();
+        return clonado;
     }
 
     public void imprimir() {
