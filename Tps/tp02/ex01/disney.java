@@ -12,17 +12,30 @@ public class disney {
         return fim;
     }
 
+    public static int converteStr(String entrada){
+        int valor = 0;
+        int multiplicador = 1;
+        for(int i = entrada.length() - 1; i > 0; i--){
+            int numero = entrada.charAt(i) - '0';
+            valor += numero * multiplicador;
+            multiplicador *= 10;
+        }
+        return valor;
+    }
+
     public static void main(String[] args){
         Scanner ler = new Scanner(System.in);
-        /*String entrada = ler.nextLine();
+        String entrada = ler.nextLine();
+        Show[] shows = new Show[100];
+        int tam = 0;
         while(!ehFim(entrada)){
-            Show filme = new Show(entrada);
-            filme.imprimir();
+            shows[tam] = new Show(converteStr(entrada));
+            tam++;
             entrada = ler.nextLine();
-        }*/
-        int linha = ler.nextInt();
-        Show filme = new Show(linha);
-        filme.imprimir();
+        }
+        for(int i = 0; i < tam; i++){
+            shows[i].imprimir();
+        }
         ler.close();
     }
 }

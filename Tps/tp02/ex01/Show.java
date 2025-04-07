@@ -195,6 +195,7 @@ public class Show {
                 pos++;
             }
         } else {
+            director = "NaN";
             pos++;
         }
         setDirector(diretor);
@@ -230,7 +231,8 @@ public class Show {
                     pos++;
             }
         } else {
-            elenco = new String[0];
+            elenco = new String[1];
+            elenco[0] = "NaN";
             pos++;
         }
         setCast(elenco);
@@ -243,6 +245,7 @@ public class Show {
             }
             pos++;
         } else {
+            pais = "NaN";
             pos++;
         }
         setCountry(pais);
@@ -312,7 +315,7 @@ public class Show {
             for (int i = 0; i < categorias.length; i++)
                 categorias[i] = "";
             while (pos < linha.length() && linha.charAt(pos) != '"' && categoria < categorias.length) {
-                while (pos < linha.length() && linha.charAt(pos) != ',') {
+                while (pos < linha.length() && linha.charAt(pos) != ',' && linha.charAt(pos) != '"') {
                     categorias[categoria] += linha.charAt(pos);
                     pos++;
                 }
@@ -330,29 +333,30 @@ public class Show {
     public Show clone(){
         Show clonado = new Show();
         clonado.show_ID = this.show_ID;
+        clonado.type = this.type;
+        clonado.title = this.title;
+        clonado.director = this.director;
         clonado.cast = this.cast.clone();
         clonado.country = this.country;
         clonado.data_added = this.data_added;
-        clonado.director = this.director;
         clonado.duration = this.duration;
         clonado.rating = this.rating;
         clonado.release_year = this.release_year;
-        clonado.type = this.type;
         clonado.listed_in = this.listed_in.clone();
         return clonado;
     }
 
     public void imprimir() {
-        System.out.println(show_ID);
-        System.out.println(type);
-        System.out.println(title);
-        System.out.println(director);
-        System.out.println(Arrays.toString(cast));
-        System.out.println(country);
-        System.out.println(data_added);
-        System.out.println(release_year);
-        System.out.println(rating);
-        System.out.println(duration);
-        System.out.println(Arrays.toString(listed_in));
+        SimpleDateFormat data = new SimpleDateFormat("dd/MM/yyyy", Locale.forLanguageTag("pt-BR"));
+        String dataFormatada;
+        if(getData_added() != null){
+            dataFormatada = data.format(getData_added());
+        } 
+        else{
+            dataFormatada = "NaN";
+        }
+        System.out.printf("%s ## %s ## %s ## %s ## %s ## %s ## %s ## %d ## %s ## %s ## %s ##\n",
+         show_ID, type, title, director, Arrays.toString(cast), country, dataFormatada, release_year,
+          rating, duration, Arrays.toString(listed_in));
     }
 }
