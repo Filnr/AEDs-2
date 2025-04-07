@@ -44,6 +44,10 @@ public class Show {
         this.data_added = data_added;
     }
 
+    public void setRelease_year(int release_year) {
+        this.release_year = release_year;
+    }
+
     public void setRating(String rating) {
         this.rating = rating;
     }
@@ -94,10 +98,6 @@ public class Show {
 
     public String getRating() {
         return rating;
-    }
-
-    public int getRelease_year() {
-        return release_year;
     }
 
     public String getShow_ID() {
@@ -153,40 +153,43 @@ public class Show {
     public void leDados(String linha) {
         int pos = 0;
         // le a entrada enquanto não ler o ',' e depois pula o ','
-        show_ID = "";
+        String ID = "";
         while (pos < linha.length() && linha.charAt(pos) != ',') {
-            show_ID += linha.charAt(pos);
+            ID += linha.charAt(pos);
             pos++;
         }
+        setID(ID);
         pos++;
         // Se a primeira letra lida for M, o tipo será Movie e senão TV
+        String tipo = "";
         if (pos < linha.length() && linha.charAt(pos) == 'M') {
-            type = "Movie";
+            tipo = "Movie";
             pos += 6;
         } else {
-            type = "TV Show";
+            tipo = "TV Show";
             pos += 8;
         }
-
-        title = "";
+        setType(tipo);
+        String titulo = "";
         while (pos < linha.length() && linha.charAt(pos) != ',') {
-            title += linha.charAt(pos);
+            titulo += linha.charAt(pos);
             pos++;
         }
+        setTitle(titulo);
         pos++;
         // leitura dos diretores
-        director = "";
+        String diretor = "";
         if (pos < linha.length() && linha.charAt(pos) != ',') {
             if (linha.charAt(pos) == '"') {
                 pos++;
                 while (pos < linha.length() && linha.charAt(pos) != '"') {
-                    director += linha.charAt(pos);
+                    diretor += linha.charAt(pos);
                     pos++;
                 }
                 pos += 2;
             } else {
                 while (pos < linha.length() && linha.charAt(pos) != ',') {
-                    director += linha.charAt(pos);
+                    diretor += linha.charAt(pos);
                     pos++;
                 }
                 pos++;
@@ -194,17 +197,19 @@ public class Show {
         } else {
             pos++;
         }
+        setDirector(diretor);
         // Elenco
+        String[] elenco;
         if (pos < linha.length() && linha.charAt(pos) != ',') {
             if (linha.charAt(pos) == '"') {
                 pos++;
-                cast = new String[contaAtores(linha, pos)];
+                elenco = new String[contaAtores(linha, pos)];
                 int ator = 0;
-                for (int i = 0; i < cast.length; i++)
-                    cast[i] = "";
+                for (int i = 0; i < elenco.length; i++)
+                    elenco[i] = "";
                 while (pos < linha.length() && linha.charAt(pos) != '"') {
                     while (pos < linha.length() && linha.charAt(pos) != ',' && linha.charAt(pos) != '"') {
-                        cast[ator] += linha.charAt(pos);
+                        elenco[ator] += linha.charAt(pos);
                         pos++;
                     }
                     if (pos < linha.length() && linha.charAt(pos) == ',') {
@@ -215,30 +220,32 @@ public class Show {
                 if (pos < linha.length())
                     pos += 2;
             } else {
-                cast = new String[1];
-                cast[0] = "";
+                elenco = new String[1];
+                elenco[0] = "";
                 while (pos < linha.length() && linha.charAt(pos) != ',') {
-                    cast[0] += linha.charAt(pos);
+                    elenco[0] += linha.charAt(pos);
                     pos++;
                 }
                 if (pos < linha.length())
                     pos++;
             }
         } else {
-            cast = new String[0];
+            elenco = new String[0];
             pos++;
         }
+        setCast(elenco);
         // País
-        country = "";
+        String pais = "";
         if (linha.charAt(pos) != ',') {
             while (linha.charAt(pos) != ',') {
-                country += linha.charAt(pos);
+                pais += linha.charAt(pos);
                 pos++;
             }
             pos++;
         } else {
             pos++;
         }
+        setCountry(pais);
         // data de adição
         String data = "";
         if (linha.charAt(pos) == '"') {
@@ -250,7 +257,7 @@ public class Show {
             pos += 2;
             SimpleDateFormat formataEntrada = new SimpleDateFormat("MMMM dd, yyyy", Locale.ENGLISH);
             try {
-                data_added = formataEntrada.parse(data);
+                setDate(formataEntrada.parse(data));
             } catch (ParseException erro) {
                 erro.printStackTrace();
             }
@@ -258,59 +265,62 @@ public class Show {
             pos++;
         }
         // ano de lançamento
+        int ano = 0;
         if (linha.charAt(pos) != ',') {
             int decimal = 1000;
             while (linha.charAt(pos) != ',') {
                 int numero = linha.charAt(pos) - '0';
-                release_year += numero * decimal;
+                ano += numero * decimal;
                 pos++;
                 decimal /= 10;
             }
             pos++;
         } else {
-            release_year = 0;
             pos++;
         }
+        setRelease(ano);
         // Avaliação
-        rating = "";
+        String rate = "";
         while (linha.charAt(pos) != ',') {
-            rating += linha.charAt(pos);
+            rate += linha.charAt(pos);
             pos++;
         }
         pos++;
-
+        setRating(rate);
         // Duração
-        duration = "";
+        String duracao = "";
         while (linha.charAt(pos) != ',') {
-            duration += linha.charAt(pos);
+            duracao += linha.charAt(pos);
             pos++;
         }
         pos++;
-
+        setDuration(duracao);
         // Categorias
+        String[] categorias;
         if (linha.charAt(pos) != '"') {
-            listed_in = new String[1];
-            listed_in[0] = "";
+            categorias = new String[1];
+            categorias[0] = "";
             while (pos < linha.length() && linha.charAt(pos) != ',') {
-                listed_in[0] += linha.charAt(pos);
+                categorias[0] += linha.charAt(pos);
                 pos++;
             }
 
         } else {
             pos++;
-            listed_in = new String[contaAtores(linha, pos)];
+            categorias = new String[contaAtores(linha, pos)];
             int categoria = 0;
-            for (int i = 0; i < listed_in.length; i++)
-                listed_in[i] = "";
-            while (pos < linha.length() && linha.charAt(pos) != '"' && categoria < listed_in.length) {
+            for (int i = 0; i < categorias.length; i++)
+                categorias[i] = "";
+            while (pos < linha.length() && linha.charAt(pos) != '"' && categoria < categorias.length) {
                 while (pos < linha.length() && linha.charAt(pos) != ',') {
-                    listed_in[categoria] += linha.charAt(pos);
+                    categorias[categoria] += linha.charAt(pos);
                     pos++;
                 }
                 pos++;
                 categoria++;
             }
         }
+        setListed(categorias);
     }
 
     public Show(String entrada) {
