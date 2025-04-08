@@ -7,6 +7,9 @@
 #define MAX_STR 1024
 #define MAX_CAST 50
 #define MAX_LISTED 50
+#define TAM_MAX 1024
+#define _XOPEN_SOURCE 700
+
 
 typedef struct {
     char show_ID[MAX_STR];
@@ -107,7 +110,7 @@ void ler(Show *s, const char linha[]) {
     int pos = 0;
     char buffer[MAX_STR];
     
-    leCampo(linha, &pos, buffer);
+    leCampo((char *)linha, &pos, buffer);
     setShowID(s, buffer);
     
     // Lê o tipo: se o primeiro caractere for 'M', então é "Movie"
@@ -120,7 +123,7 @@ void ler(Show *s, const char linha[]) {
     }
     
     // Lê o título
-    leCampo(linha, &pos, buffer);
+    leCampo((char *)linha, &pos, buffer);
     setTitle(s, buffer);
     
     // Lê o diretor
@@ -136,7 +139,7 @@ void ler(Show *s, const char linha[]) {
         buffer[i] = '\0';
         pos += 2;  // pula a aspa final e a vírgula
     } else {
-        leCampo(linha, &pos, buffer);
+        leCampo((char *)linha, &pos, buffer);
     }
     setDirector(s, buffer);
     
@@ -159,7 +162,7 @@ void ler(Show *s, const char linha[]) {
         if (linha[pos] == ',') pos++; // pula a vírgula que separa o campo do próximo
     } else {
         // Se não estiver entre aspas, lê um único nome
-        leCampo(linha, &pos, buffer);
+        leCampo((char *)linha, &pos, buffer);
         strncpy(Elenco[0], buffer, MAX_STR);
         Elenco[0][MAX_STR-1] = '\0';
         ator = 1;
@@ -167,11 +170,10 @@ void ler(Show *s, const char linha[]) {
     setCast(s, Elenco, ator);
     
     // Lê o país
-    leCampo(linha, &pos, buffer);
+    leCampo((char *)linha, &pos, buffer);
     setCountry(s, buffer);
     
     // Lê a data de adição
-    // Se estiver entre aspas, lê até a aspa final; em seguida, converte a string para struct tm.
     if (linha[pos] == '"') {
         pos++;  // pula a aspa
         int i = 0;
@@ -181,16 +183,14 @@ void ler(Show *s, const char linha[]) {
         buffer[i] = '\0';
         pos += 2; // pula a aspa final e a vírgula
         
-        // Converter a string para data (exemplo usando strptime, se disponível)
+        // Converter a string para data usando strptime (formato: "MMMM dd, yyyy")
         struct tm date;
         memset(&date, 0, sizeof(struct tm));
-        // Supondo que a data esteja no formato "MMMM dd, yyyy" (ajuste conforme necessário)
-        // Por exemplo, se a data for "September 3, 2021", o formato pode ser "%B %d, %Y"
-        if (strftime(buffer, "%B %d, %Y", &date) != NULL) {
+        if (strptime(buffer, "%B %d, %Y", &date) != NULL) {
             setDataAdded(s, &date);
         }
     } else {
-        // pula o campo sem data
+        // Pula o campo sem data
         while (linha[pos] != ',' && linha[pos] != '\0') pos++;
         if (linha[pos] == ',') pos++;
     }
@@ -202,14 +202,14 @@ void ler(Show *s, const char linha[]) {
         pos++;
     }
     setReleaseYear(s, ano);
-    if (line[pos] == ',') pos++;
+    if (linha[pos] == ',') pos++;
     
     // Lê o rating
-    leCampo(line, &pos, buffer);
+    leCampo((char *)linha, &pos, buffer);
     setRating(s, buffer);
     
     // Lê a duração
-    leCampo(line, &pos, buffer);
+    leCampo((char *)linha, &pos, buffer);
     setDuration(s, buffer);
     
     // Lê as categorias (listed_in)
@@ -229,7 +229,7 @@ void ler(Show *s, const char linha[]) {
         if (linha[pos] == '"') pos++; // pula a aspa final
     } else {
         // Lê uma única categoria sem aspas
-        leCampo(line, &pos, buffer);
+        leCampo((char *)linha, &pos, buffer);
         strncpy(Categorias[0], buffer, MAX_STR);
         Categorias[0][MAX_STR-1] = '\0';
         categoria = 1;
@@ -237,7 +237,7 @@ void ler(Show *s, const char linha[]) {
     setListedIn(s, Categorias, categoria);
 }
 
-void procuraLinha(int id, char[] linha){
+void procuraLinha(int id, char linha[]){
     FILE *bd = fopen("temp/disneyplus.csv", "r");
     if (bd != NULL) {
         bool encontrado = false;
@@ -245,19 +245,22 @@ void procuraLinha(int id, char[] linha){
         char buffer[MAX_STR];
         while (fgets(buffer, MAX_STR, bd) != NULL && !encontrado) {
             if (contador == id) {
-                strcpy(linha, buffer);  // Copia a linha encontrada para o buffer 'linha'
-                econtrado = true;
+                strcpy(linha, buffer);  // copia a linha encontrada para o buffer 'linha'
+                encontrado = true;
             }
             contador++;
         }
+        fclose(bd);
+    } else {
+        fprintf(stderr, "Erro ao abrir o arquivo temp/disneyplus.csv\n");
+        exit(EXIT_FAILURE);
     }    
-    fclose(fp);
 }
 
 int parseId(char entrada[]){
     int valor = 0;
     int multiplicador = 1;
-    for(int i = strlen(entrada) - 1; i > 0; i--){
+    for (int i = strlen(entrada) - 1; i >= 0; i--){
         int numero = entrada[i] - '0';
         valor += numero * multiplicador;
         multiplicador *= 10;
@@ -269,44 +272,44 @@ void imprimir(const Show *s) {
     char dataFormatada[100];
 
     // Formata a data, se estiver definida
-    if (s->data_adicionada_valida) {
-        strftime(dataFormatada, sizeof(dataFormatada), "%d/%m/%Y", &s->data_adicionada);
+    if (s->data_added_valid) {
+        strftime(dataFormatada, sizeof(dataFormatada), "%d/%m/%Y", &s->data_added);
     } else {
         strcpy(dataFormatada, "NaN");
     }
 
     // Imprime os campos com "##" entre eles
-    printf("%s ## %s ## %s ## %s ## ", s->id_show, s->tipo, s->titulo, s->diretor);
+    printf("%s ## %s ## %s ## %s ## ", s->show_ID, s->type, s->title, s->director);
 
     // Imprime o elenco entre colchetes
     printf("[");
-    for (int i = 0; i < s->num_elenco; i++) {
-        printf("%s", s->elenco[i]);
-        if (i < s->num_elenco - 1) {
+    for (int i = 0; i < s->cast_count; i++) {
+        printf("%s", s->cast[i]);
+        if (i < s->cast_count - 1) {
             printf(", ");
         }
     }
     printf("] ## ");
 
-    // Imprime o país, data e ano de lançamento, avaliação e duração
-    printf("%s ## %s ## %d ## %s ## %s ## ", s->pais, dataFormatada, s->ano_lancamento, s->avaliacao, s->duracao);
+    // Imprime o país, data, ano de lançamento, avaliação e duração
+    printf("%s ## %s ## %d ## %s ## %s ## ", s->country, dataFormatada, s->release_year, s->rating, s->duration);
 
     // Imprime as categorias entre colchetes
     printf("[");
-    for (int i = 0; i < s->num_categorias; i++) {
-        printf("%s", s->categorias[i]);
-        if (i < s->num_categorias - 1) {
+    for (int i = 0; i < s->listed_count; i++) {
+        printf("%s", s->listed_in[i]);
+        if (i < s->listed_count - 1) {
             printf(", ");
         }
     }
     printf("]\n");
 }
 
-
 int main(void) {
     char entrada[TAM_MAX];
     Show shows[100];
     int qtShows = 0;
+    
     fgets(entrada, TAM_MAX, stdin);
     entrada[strcspn(entrada, "\n")] = '\0';
     while (strcmp(entrada, "FIM") != 0) {
