@@ -80,7 +80,7 @@ public class Show {
         return this.cast;
     }
 
-    public String getCountry(){
+    public String getCountry() {
         return this.country;
     }
 
@@ -171,10 +171,21 @@ public class Show {
         }
         setType(tipo);
         String titulo = "";
-        while (pos < linha.length() && linha.charAt(pos) != ',') {
-            titulo += linha.charAt(pos);
+        if (linha.charAt(pos) == '"') {
             pos++;
+            while (pos < linha.length() && linha.charAt(pos) != ',') {
+                if(linha.charAt(pos) != '"'){
+                    titulo += linha.charAt(pos);
+                }
+                pos++;
+            }
+        } else {
+            while (pos < linha.length() && linha.charAt(pos) != ',') {
+                titulo += linha.charAt(pos);
+                pos++;
+            }
         }
+
         setTitle(titulo);
         pos++;
         // leitura dos diretores
@@ -195,7 +206,7 @@ public class Show {
                 pos++;
             }
         } else {
-            director = "NaN";
+            diretor = "NaN";
             pos++;
         }
         setDirector(diretor);
@@ -330,7 +341,7 @@ public class Show {
         ler(entrada);
     }
 
-    public Show clone(){
+    public Show clone() {
         Show clonado = new Show();
         clonado.show_ID = this.show_ID;
         clonado.type = this.type;
@@ -347,16 +358,16 @@ public class Show {
     }
 
     public void imprimir() {
-        SimpleDateFormat data = new SimpleDateFormat("dd/MM/yyyy", Locale.forLanguageTag("pt-BR"));
+        SimpleDateFormat data = new SimpleDateFormat("MMMM DD, YYYY", Locale.ENGLISH);
         String dataFormatada;
-        if(getData_added() != null){
+        if (getData_added() != null) {
             dataFormatada = data.format(getData_added());
-        } 
-        else{
+        } else {
             dataFormatada = "NaN";
         }
-        System.out.printf("%s ## %s ## %s ## %s ## %s ## %s ## %s ## %d ## %s ## %s ## %s ##\n",
-         show_ID, type, title, director, Arrays.toString(cast), country, dataFormatada, release_year,
-          rating, duration, Arrays.toString(listed_in));
+        System.out.printf("=> %s ## %s ## %s ## %s ## %s ## %s ## %s ## %d ## %s ## %s ## %s ##\n",
+                show_ID, title, type, director, Arrays.toString(cast), country, dataFormatada, release_year,
+                rating, duration, Arrays.toString(listed_in));
     }
+
 }

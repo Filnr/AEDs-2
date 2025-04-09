@@ -26,7 +26,7 @@ public class disney {
     public static void main(String[] args){
         Scanner ler = new Scanner(System.in);
         String entrada = ler.nextLine();
-        Show[] shows = new Show[100];
+        Show[] shows = new Show[500];
         int tam = 0;
         while(!ehFim(entrada)){
             shows[tam] = new Show(converteStr(entrada));
