@@ -3,7 +3,7 @@ import java.text.*;
 import java.io.*;
 
 //simple date format e date
-public class Show {
+class Show {
     private String show_ID;
     private String type;
     private String title;
@@ -377,6 +377,7 @@ public class Show {
     }
 
     public void imprimir() {
+        // antes de começar a impressão, ordena os vetores que precisam ser ordenados
         OrdenaAlfa(cast);
         OrdenaAlfa(listed_in);
         SimpleDateFormat data = new SimpleDateFormat("MMMM dd, yyyy", Locale.ENGLISH);
@@ -390,9 +391,11 @@ public class Show {
                 show_ID, title, type, director, Arrays.toString(cast), country, dataFormatada, release_year,
                 rating, duration, Arrays.toString(listed_in));
     }
+}
 
-
+public class Psequencial{
     public static boolean ehFim(String entrada){
+        // Função responsavel por verificar se a entrada recebida é FIM
         Boolean fim = false;
         if(entrada.length() == 3){
             if(entrada.charAt(0) == 'F' && entrada.charAt(1) == 'I' && entrada.charAt(2) == 'M'){
@@ -403,6 +406,7 @@ public class Show {
     }
 
     public static int converteStr(String entrada){
+        // COnverte a entrada que esta em formato de string, para um valor int que será usado como chave para ler o csv
         int valor = 0;
         int multiplicador = 1;
         for(int i = entrada.length() - 1; i > 0; i--){
@@ -414,7 +418,10 @@ public class Show {
     }
 
     public static void main(String[] args){
-        Scanner ler = new Scanner(System.in);
+        // Inicia o scanner com o UTF-8 para conseguir ler todos os caracteres
+        Scanner ler = new Scanner(System.in, "UTF-8");
+        // Registra o inicio do processamento do sistema
+        long inicio = System.nanoTime();
         String entrada = ler.nextLine();
         Show[] shows = new Show[500];
         int tam = 0;
@@ -423,9 +430,38 @@ public class Show {
             tam++;
             entrada = ler.nextLine();
         }
-        for(int i = 0; i < tam; i++){
-            shows[i].imprimir();
+        entrada = ler.nextLine();
+        int comparacoes = 0;
+        while(!ehFim(entrada)){
+            boolean encontrado = false;
+            int i = 0;
+            while(i < tam && !encontrado){
+                // Aumenta o numero de comparações a cada vez que o loop reinciar, para contar todas as comparações
+                comparacoes++;
+                if(shows[i].getTitle().equals(entrada)){
+                    encontrado = true;
+                }
+                i++;
+            }
+            if(encontrado){
+                System.out.println("SIM");
+            }
+            else{
+                System.out.println("NAO");
+            }
+            entrada = ler.nextLine();
         }
         ler.close();
+        // calcula o tempo gasto, e inicia o processo de escrita no arquivo
+        long fim = System.nanoTime();
+        double tempoExec = (fim - inicio) / 1e6;
+        try{
+            FileWriter arq = new FileWriter("matrícula_sequencial.txt");
+            arq.write("869899" + '\t' + tempoExec + '\t' + comparacoes);
+            arq.close();
+        }
+        catch(IOException e){
+            System.out.println(e.getMessage());
+        }
     }
 }

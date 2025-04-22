@@ -3,6 +3,7 @@
 #include <string.h>
 #include <ctype.h>
 #include <stdbool.h>
+#include <time.h>
 
 #define MAX_LINE 1024
 #define MAX_SHOWS 500
@@ -152,7 +153,7 @@ void imprimir_show(const Show *s) {
         listedStr);
 }
 
-void parse_line(Show *s, const char *line) {
+void interpreta(Show *s, const char *line) {
     int pos = 0;
     int len = strlen(line);
     char buffer[1024];
@@ -400,7 +401,7 @@ void show_from_id(Show *s, int id) {
         if(l > 0 && line[l-1]=='\n')
             line[l-1] = '\0';
         if (contador == id) {
-            parse_line(s, line);
+            interpreta(s, line);
             encontrado = true;
         }
         contador++;
@@ -413,53 +414,126 @@ void show_from_id(Show *s, int id) {
 }
 
 void clone(Show *original, Show *clone){
-    clone->show_ID = original->show_ID;
-    clone->type = original->type;
-    clone->title = original->title;
-    clone->director = original->director;
-    for (int i = 0; i < original->cast_count; i++) {
-        clone->cast[i] = original->cast[i];
-    }
-    clone->cast_count = original->cast_count;
-    clone->country = original->country;
-    clone->data_added = original->data_added;
+    init_show(clone); // Sempre inicialize antes
+
+    clone->show_ID = strdup(original->show_ID);
+    clone->type = strdup(original->type);
+    clone->title = strdup(original->title);
+    clone->director = strdup(original->director);
+    clone->country = strdup(original->country);
+    clone->data_added = original->data_added ? strdup(original->data_added) : NULL;
     clone->release_year = original->release_year;
-    clone->rating = original->rating;
-    clone->duration = original->duration;
-    for (int i = 0; i < original->listed_count; i++) {
-        clone->listed_in[i] = original->listed_in[i];
+    clone->rating = strdup(original->rating);
+    clone->duration = strdup(original->duration);
+    // primeiro copia a contagem, para depois conseguir copiar completamente cada parte
+    clone->cast_count = original->cast_count;
+    clone->cast = malloc(clone->cast_count * sizeof(char*));
+    for (int i = 0; i < clone->cast_count; i++) {
+        clone->cast[i] = strdup(original->cast[i]);
     }
     clone->listed_count = original->listed_count;
+    clone->listed_in = malloc(clone->listed_count * sizeof(char*));
+    for (int i = 0; i < clone->listed_count; i++) {
+        clone->listed_in[i] = strdup(original->listed_in[i]);
+    }
+}
+
+
+void ordenaTitulos(Show shows[], int tam){
+    // Função que utiliza o algoritmo de seleção para ordenar os shows por titulos
+    for(int i = 0; i < tam - 1; i++){
+        int indiceMin = i;
+        for(int j = i+1; j < tam; j++){
+            if(strcmp(shows[j].title, shows[indiceMin].title) < 0){
+                indiceMin = j;
+            }
+        }
+        if(indiceMin != i){
+            Show temp = shows[i];
+            shows[i] = shows[indiceMin];
+            shows[indiceMin] = temp;
+        }
+    }
+}
+
+bool buscaTitulo(Show shows[], int tam, char chave[], int *comparacoes){
+    // Função que realiza a busca binaria
+    int esq = 0;
+    int dir = tam - 1;
+    bool achou = false;
+    while(esq <= dir && !achou){
+        int meio = (esq + dir) / 2;
+        // O se o strcmp retorna < 0, significa que a string desejada esta a direita, caso contrario esta a esquerda
+        int resultado = strcmp(shows[meio].title, chave);
+        (*comparacoes)++; // contabiliza a quantidade de comparações na busca binaria
+        if(resultado == 0){
+            achou = true;
+        }
+        else if(resultado < 0){
+            esq = meio + 1;
+        }
+        else{
+            dir = meio - 1;
+        }
+    }
+    return achou;
 }
 
 int main() {
     char entrada[MAX_LINE];
     Show shows[MAX_SHOWS];
     int tam = 0;
-    
+    clock_t inicio = clock();
     // Inicializa todos os objetos no array
     for (int i = 0; i < MAX_SHOWS; i++) {
         init_show(&shows[i]);
     }
     
-    // Leitura de entradas
+    // Se a entrada tiver '\n' troca por '\0' que é a representação de fim da string e conseguir comparar corretamente as strings
     fgets(entrada, MAX_LINE, stdin);
-    while(!ehFim(entrada)) {
-        
-        size_t len = strlen(entrada);
+    size_t len = strlen(entrada);
         if(len > 0 && entrada[len-1]=='\n'){
             entrada[len-1] = '\0';
         }
+    while(!ehFim(entrada)) {
         int id = converteStr(entrada);
         show_from_id(&shows[tam], id);
         tam++;
         fgets(entrada, MAX_LINE, stdin);
+        len = strlen(entrada);
+        if(len > 0 && entrada[len-1]=='\n'){
+            entrada[len-1] = '\0';
+        }
     }
-    
-    // Impressão dos shows
+    fgets(entrada, MAX_LINE, stdin);
+    len = strlen(entrada);
+        if(len > 0 && entrada[len-1]=='\n'){
+            entrada[len-1] = '\0';
+        }
+    ordenaTitulos(shows, tam);
+    int comps = 0;
+    while(!ehFim(entrada)){
+        // Realiza a busca binaria, que retorna um booleano
+        bool encontrado = buscaTitulo(shows, tam, entrada, &comps);        
+        if(encontrado){
+            printf("SIM\n");
+        }
+        else{
+            printf("NAO\n");
+        }
+        fgets(entrada, MAX_LINE, stdin);
+        len = strlen(entrada);
+        if(len > 0 && entrada[len-1]=='\n'){
+            entrada[len-1] = '\0';
+        }
+    }
+    // libera a memoria alocada
     for (int i = 0; i < tam; i++) {
-        imprimir_show(&shows[i]);
         free_show(&shows[i]);
     }
+    clock_t fim = clock();
+    double tempo = ((double) (fim - inicio) / CLOCKS_PER_SEC) * 1000;
+    FILE* log = fopen("matrícula_binaria.txt", "w");
+    fprintf(log, "869899\t%.4lf\t%d", tempo, comps);
     return 0;
 }
