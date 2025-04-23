@@ -453,7 +453,7 @@ void ordenaTitulos(Show shows[], int tam){
             shows[i] = shows[indiceMin];
             shows[indiceMin] = temp;
         }
-    }
+    }1
 }
 
 bool buscaTitulo(Show shows[], int tam, char chave[], int *comparacoes){

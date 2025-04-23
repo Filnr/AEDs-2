@@ -3,7 +3,7 @@ import java.text.*;
 import java.io.*;
 
 //simple date format e date
-public class Show {
+class Show {
     private String show_ID;
     private String type;
     private String title;
@@ -173,12 +173,11 @@ public class Show {
         String titulo = "";
         if (linha.charAt(pos) == '"') {
             pos++;
-            while (pos < linha.length() && linha.charAt(pos) != ',') {
-                if(linha.charAt(pos) != '"'){
-                    titulo += linha.charAt(pos);
-                }
+            while (pos < linha.length() && linha.charAt(pos) != '"') {
+                titulo += linha.charAt(pos);
                 pos++;
             }
+            pos+= 2;
         } else {
             while (pos < linha.length() && linha.charAt(pos) != ',') {
                 titulo += linha.charAt(pos);
@@ -225,7 +224,7 @@ public class Show {
                         pos++;
                     }
                     if (pos < linha.length() && linha.charAt(pos) == ',') {
-                        pos+= 2;
+                        pos += 2;
                         ator++;
                     }
                 }
@@ -249,15 +248,27 @@ public class Show {
         setCast(elenco);
         // País
         String pais = "";
-        if (linha.charAt(pos) != ',') {
-            while (linha.charAt(pos) != ',') {
-                pais += linha.charAt(pos);
+        if (pos < linha.length()) {
+            if (linha.charAt(pos) == '"') {
+                pos++;
+                while (linha.charAt(pos) != '"' && linha.length() > pos) {
+                    pais += linha.charAt(pos);
+                    pos++;
+                }
+                if (linha.charAt(pos) == '"') {
+                    pos += 2;
+                }
+            } else if (linha.charAt(pos) != ',') {
+                while (linha.charAt(pos) != ',' && linha.length() > pos) {
+                    pais += linha.charAt(pos);
+                    pos++;
+                }
                 pos++;
             }
-            pos++;
-        } else {
-            pais = "NaN";
-            pos++;
+            else{
+                pais = "NaN";
+                pos++;
+            }
         }
         setCountry(pais);
         // data de adição
@@ -331,7 +342,7 @@ public class Show {
                     pos++;
                 }
                 if (pos < linha.length() && linha.charAt(pos) == ',') {
-                    pos+= 2;
+                    pos += 2;
                     categoria++;
                 }
             }
@@ -365,10 +376,10 @@ public class Show {
         do {
             trocou = false;
             for (int i = 0; i < n - 1; i++) {
-                if (vetor[i].compareTo(vetor[i+1]) > 0) {
+                if (vetor[i].compareTo(vetor[i + 1]) > 0) {
                     String temp = vetor[i];
-                    vetor[i] = vetor[i+1];
-                    vetor[i+1] = temp;
+                    vetor[i] = vetor[i + 1];
+                    vetor[i + 1] = temp;
                     trocou = true;
                 }
             }
@@ -377,9 +388,10 @@ public class Show {
     }
 
     public void imprimir() {
+        // antes de começar a impressão, ordena os vetores que precisam ser ordenados
         OrdenaAlfa(cast);
         OrdenaAlfa(listed_in);
-        SimpleDateFormat data = new SimpleDateFormat("MMMM dd, yyyy", Locale.ENGLISH);
+        SimpleDateFormat data = new SimpleDateFormat("MMMM d, yyyy", Locale.ENGLISH);
         String dataFormatada;
         if (getData_added() != null) {
             dataFormatada = data.format(getData_added());
@@ -389,43 +401,5 @@ public class Show {
         System.out.printf("=> %s ## %s ## %s ## %s ## %s ## %s ## %s ## %d ## %s ## %s ## %s ##\n",
                 show_ID, title, type, director, Arrays.toString(cast), country, dataFormatada, release_year,
                 rating, duration, Arrays.toString(listed_in));
-    }
-
-
-    public static boolean ehFim(String entrada){
-        Boolean fim = false;
-        if(entrada.length() == 3){
-            if(entrada.charAt(0) == 'F' && entrada.charAt(1) == 'I' && entrada.charAt(2) == 'M'){
-                fim = true;
-            }
-        }
-        return fim;
-    }
-
-    public static int converteStr(String entrada){
-        int valor = 0;
-        int multiplicador = 1;
-        for(int i = entrada.length() - 1; i > 0; i--){
-            int numero = entrada.charAt(i) - '0';
-            valor += numero * multiplicador;
-            multiplicador *= 10;
-        }
-        return valor;
-    }
-
-    public static void main(String[] args){
-        Scanner ler = new Scanner(System.in);
-        String entrada = ler.nextLine();
-        Show[] shows = new Show[500];
-        int tam = 0;
-        while(!ehFim(entrada)){
-            shows[tam] = new Show(converteStr(entrada));
-            tam++;
-            entrada = ler.nextLine();
-        }
-        for(int i = 0; i < tam; i++){
-            shows[i].imprimir();
-        }
-        ler.close();
     }
 }

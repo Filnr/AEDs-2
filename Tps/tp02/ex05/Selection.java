@@ -119,7 +119,7 @@ class Show {
     }
 
     public Show(int id) {
-        String caminho = "tmp/disneyplus.csv";
+        String caminho = "/tmp/disneyplus.csv";
         String linha = "";
         int contador = 0;
         boolean encontrado = false;
@@ -173,12 +173,11 @@ class Show {
         String titulo = "";
         if (linha.charAt(pos) == '"') {
             pos++;
-            while (pos < linha.length() && linha.charAt(pos) != ',') {
-                if (linha.charAt(pos) != '"') {
-                    titulo += linha.charAt(pos);
-                }
+            while (pos < linha.length() && linha.charAt(pos) != '"') {
+                titulo += linha.charAt(pos);
                 pos++;
             }
+            pos+= 2;
         } else {
             while (pos < linha.length() && linha.charAt(pos) != ',') {
                 titulo += linha.charAt(pos);
@@ -251,26 +250,26 @@ class Show {
         String pais = "";
         if (pos < linha.length()) {
             if (linha.charAt(pos) == '"') {
-                pos++; // pula a aspa inicial
-                while (pos < linha.length() && linha.charAt(pos) != '"') {
+                pos++;
+                while (linha.charAt(pos) != '"' && linha.length() > pos) {
                     pais += linha.charAt(pos);
                     pos++;
                 }
-                if (pos < linha.length())
-                    pos++; // pula a aspa final
-                if (pos < linha.length() && linha.charAt(pos) == ',')
-                    pos++; // pula a vírgula
-            } else {
-                while (pos < linha.length() && linha.charAt(pos) != ',') {
+                if (linha.charAt(pos) == '"') {
+                    pos += 2;
+                }
+            } else if (linha.charAt(pos) != ',') {
+                while (linha.charAt(pos) != ',' && linha.length() > pos) {
                     pais += linha.charAt(pos);
                     pos++;
                 }
-                if (pos < linha.length())
-                    pos++; // pula a vírgula
+                pos++;
+            }
+            else{
+                pais = "NaN";
+                pos++;
             }
         }
-        if (pais.isEmpty())
-            pais = "NaN";
         setCountry(pais);
         // data de adição
         String data = "";
@@ -392,7 +391,7 @@ class Show {
         // antes de começar a impressão, ordena os vetores que precisam ser ordenados
         OrdenaAlfa(cast);
         OrdenaAlfa(listed_in);
-        SimpleDateFormat data = new SimpleDateFormat("MMMM dd, yyyy", Locale.ENGLISH);
+        SimpleDateFormat data = new SimpleDateFormat("MMMM d, yyyy", Locale.ENGLISH);
         String dataFormatada;
         if (getData_added() != null) {
             dataFormatada = data.format(getData_added());
