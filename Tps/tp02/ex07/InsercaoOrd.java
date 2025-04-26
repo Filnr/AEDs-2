@@ -104,22 +104,25 @@ class Show {
         return show_ID;
     }
 
+    private static final SimpleDateFormat dateFormat = new SimpleDateFormat("MMMM d, yyyy", Locale.ENGLISH); 
+
     public Show() {
-        show_ID = "";
-        type = "";
-        title = "";
-        director = "";
-        cast = new String[0];
-        country = "";
+        show_ID = "NaN";
+        type = "NaN";
+        title = "NaN";
+        director = "NaN";
+        cast = null;
+        country = "NaN";
         data_added = null;
         release_year = 0;
-        rating = "";
-        duration = "";
-        listed_in = new String[0];
+        rating = "NaN";
+        duration = "NaN";
+        listed_in = null;
     }
 
     public Show(int id) {
-        String caminho = "tmp/disneyplus.csv";
+        // Construtor responsavel por ler a linha exata do id lido, e chamar a função responsavel pela leitura e atribuição
+        String caminho = "/tmp/disneyplus.csv";
         String linha = "";
         int contador = 0;
         boolean encontrado = false;
@@ -136,224 +139,57 @@ class Show {
         }
     }
 
-    private int contaAtores(String linha, int posicao) {
-        // Função resposavel por ler quantos conjuntos de palavras tem por meio da
-        // virgula
-        // É usada para ler a quantidade de atores e categorias
-        int qtAtores = 1;
-        while (posicao < linha.length() && linha.charAt(posicao) != '"') {
-            if (linha.charAt(posicao) == ',') {
-                qtAtores++;
-            }
-            posicao++;
-        }
-        return qtAtores;
-    }
-
     public void ler(String linha) {
-        int pos = 0;
-        // le a entrada enquanto não ler o ',' e depois pula o ','
-        String ID = "";
-        while (pos < linha.length() && linha.charAt(pos) != ',') {
-            ID += linha.charAt(pos);
-            pos++;
-        }
-        setID(ID);
-        pos++;
-        // Se a primeira letra lida for M, o tipo será Movie e senão TV
-        String tipo = "";
-        if (pos < linha.length() && linha.charAt(pos) == 'M') {
-            tipo = "Movie";
-            pos += 6;
-        } else {
-            tipo = "TV Show";
-            pos += 8;
-        }
-        setType(tipo);
-        String titulo = "";
-        if (linha.charAt(pos) == '"') {
-            pos++;
-            while (pos < linha.length() && linha.charAt(pos) != '"') {
-                titulo += linha.charAt(pos);
-                pos++;
-            }
-            pos += 2;
-        } else {
-            while (pos < linha.length() && linha.charAt(pos) != ',') {
-                titulo += linha.charAt(pos);
-                pos++;
-            }
-        }
-
-        setTitle(titulo);
-        pos++;
-        // leitura dos diretores
-        String diretor = "";
-        if (pos < linha.length() && linha.charAt(pos) != ',') {
-            if (linha.charAt(pos) == '"') {
-                pos++;
-                while (pos < linha.length() && linha.charAt(pos) != '"') {
-                    diretor += linha.charAt(pos);
-                    pos++;
-                }
-                pos += 2;
+        // Inicaliza uma lista de Strings que contera cada campo da linha
+        List<String> listaCampos = new ArrayList<>();
+        StringBuilder campoAtual = new StringBuilder();
+        boolean temAspas = false;
+        for (int i = 0; i < linha.length(); i++) {
+            char letra = linha.charAt(i);
+            // Estrutura responsavel por interpretar o inicio e fim de cada campo, e adicionar as letras
+            if (letra == '"') {
+                temAspas = !temAspas;
+            } else if (letra == ',' && !temAspas) {
+                listaCampos.add(campoAtual.toString());
+                campoAtual.setLength(0);
             } else {
-                while (pos < linha.length() && linha.charAt(pos) != ',') {
-                    diretor += linha.charAt(pos);
-                    pos++;
-                }
-                pos++;
-            }
-        } else {
-            diretor = "NaN";
-            pos++;
-        }
-        setDirector(diretor);
-        // Elenco
-        String[] elenco;
-        if (pos < linha.length() && linha.charAt(pos) != ',') {
-            if (linha.charAt(pos) == '"') {
-                pos++;
-                elenco = new String[contaAtores(linha, pos)];
-                int ator = 0;
-                for (int i = 0; i < elenco.length; i++)
-                    elenco[i] = "";
-                while (pos < linha.length() && linha.charAt(pos) != '"') {
-                    while (pos < linha.length() && linha.charAt(pos) != ',' && linha.charAt(pos) != '"') {
-                        elenco[ator] += linha.charAt(pos);
-                        pos++;
-                    }
-                    if (pos < linha.length() && linha.charAt(pos) == ',') {
-                        pos += 2;
-                        ator++;
-                    }
-                }
-                if (pos < linha.length())
-                    pos += 2;
-            } else {
-                elenco = new String[1];
-                elenco[0] = "";
-                while (pos < linha.length() && linha.charAt(pos) != ',') {
-                    elenco[0] += linha.charAt(pos);
-                    pos++;
-                }
-                if (pos < linha.length())
-                    pos++;
-            }
-        } else {
-            elenco = new String[1];
-            elenco[0] = "NaN";
-            pos++;
-        }
-        setCast(elenco);
-        // País
-        String pais = "";
-        if (pos < linha.length()) {
-            if (linha.charAt(pos) == '"') {
-                pos++;
-                while (linha.charAt(pos) != '"' && linha.length() > pos) {
-                    pais += linha.charAt(pos);
-                    pos++;
-                }
-                if (linha.charAt(pos) == '"') {
-                    pos += 2;
-                }
-            } else if (linha.charAt(pos) != ',') {
-                while (linha.charAt(pos) != ',' && linha.length() > pos) {
-                    pais += linha.charAt(pos);
-                    pos++;
-                }
-                pos++;
-            } else {
-                pais = "NaN";
-                pos++;
+                campoAtual.append(letra);
             }
         }
-        setCountry(pais);
-        // data de adição
-        String data = "";
-        if (linha.charAt(pos) == '"') {
-            pos++;
-            while (linha.charAt(pos) != '"') {
-                data += linha.charAt(pos);
-                pos++;
-            }
-            pos += 2;
-            SimpleDateFormat formataEntrada = new SimpleDateFormat("MMMM dd, yyyy", Locale.ENGLISH);
-            try {
-                setDate(formataEntrada.parse(data));
-            } catch (ParseException erro) {
-                erro.printStackTrace();
-            }
-        } else {
-            pos++;
+        listaCampos.add(campoAtual.toString());
+        // Adição dos campos aos seus respectivos atributos
+        String[] campos = new String[listaCampos.size()];
+        campos = listaCampos.toArray(campos);
+        this.show_ID = campos[0];
+        this.type = campos[1].trim().equalsIgnoreCase("movie") ? "Movie" : "TV Show";
+        this.title = campos[2];
+        this.director = campos[3].equals("") ? "NaN" : campos[3];
+        this.cast = campos[4].equals("") ? new String[]{"NaN"} : campos[4].split(", ");
+        if (this.cast.length > 1) {
+            Ordena(this.cast);
         }
-        // ano de lançamento
-        int ano = 0;
-        if (linha.charAt(pos) != ',') {
-            int decimal = 1000;
-            while (linha.charAt(pos) != ',') {
-                int numero = linha.charAt(pos) - '0';
-                ano += numero * decimal;
-                pos++;
-                decimal /= 10;
-            }
-            pos++;
-        } else {
-            pos++;
+        this.country = campos[5].equals("") ? "NaN" : campos[5];
+        try {
+            this.data_added = campos[6].equals("") ? null : dateFormat.parse(campos[6]);
+        } catch (Exception e) {
+            this.data_added = null;
         }
-        setRelease(ano);
-        // Avaliação
-        String rate = "";
-        while (linha.charAt(pos) != ',') {
-            rate += linha.charAt(pos);
-            pos++;
+        this.release_year = campos[7].equals("") ? 0 : Integer.parseInt(campos[7]);
+        this.rating = campos[8];
+        this.duration = campos[9];
+        this.listed_in = campos[10].equals("") ? new String[]{"NaN"} : campos[10].split(", ");
+        if(this.listed_in.length > 1) {
+            Ordena(this.listed_in);
         }
-        pos++;
-        setRating(rate);
-        // Duração
-        String duracao = "";
-        while (linha.charAt(pos) != ',') {
-            duracao += linha.charAt(pos);
-            pos++;
-        }
-        pos++;
-        setDuration(duracao);
-        // Categorias
-        String[] categorias;
-        if (linha.charAt(pos) != '"') {
-            categorias = new String[1];
-            categorias[0] = "";
-            while (pos < linha.length() && linha.charAt(pos) != ',') {
-                categorias[0] += linha.charAt(pos);
-                pos++;
-            }
-
-        } else {
-            pos++;
-            categorias = new String[contaAtores(linha, pos)];
-            int categoria = 0;
-            for (int i = 0; i < categorias.length; i++)
-                categorias[i] = "";
-            while (pos < linha.length() && linha.charAt(pos) != '"' && categoria < categorias.length) {
-                while (pos < linha.length() && linha.charAt(pos) != ',' && linha.charAt(pos) != '"') {
-                    categorias[categoria] += linha.charAt(pos);
-                    pos++;
-                }
-                if (pos < linha.length() && linha.charAt(pos) == ',') {
-                    pos += 2;
-                    categoria++;
-                }
-            }
-        }
-        setListed(categorias);
     }
 
     public Show(String entrada) {
+        // Construtor que constroi o objeto a partir da linha do csv
         ler(entrada);
     }
 
     public Show clone() {
+        // Metodo responsavel por criar um clone do objeto selecionado
         Show clonado = new Show();
         clonado.show_ID = this.show_ID;
         clonado.type = this.type;
@@ -369,27 +205,26 @@ class Show {
         return clonado;
     }
 
-    public void OrdenaAlfa(String[] vetor) {
-        int n = vetor.length;
-        boolean trocou;
-        do {
-            trocou = false;
-            for (int i = 0; i < n - 1; i++) {
-                if (vetor[i].compareTo(vetor[i + 1]) > 0) {
-                    String temp = vetor[i];
-                    vetor[i] = vetor[i + 1];
-                    vetor[i + 1] = temp;
-                    trocou = true;
+    public void Ordena(String[] vetor) {
+        // Função responsavel por ordenar em ordem alfabetica um vetor de strings
+        // Ordenção por seleção
+        for (int i = 0; i < vetor.length; i++) {
+            int indiceMin = i;
+            for (int j = (i + 1); j < vetor.length; j++) {
+                if (vetor[j].compareTo(vetor[indiceMin]) < 0) {
+                    indiceMin = j;
                 }
             }
-            n--;
-        } while (trocou);
+            if (indiceMin != i) {
+                String temp = vetor[i];
+                vetor[i] = vetor[indiceMin];
+                vetor[indiceMin] = temp;
+            }
+        }
     }
 
     public void imprimir() {
         // antes de começar a impressão, ordena os vetores que precisam ser ordenados
-        OrdenaAlfa(cast);
-        OrdenaAlfa(listed_in);
         SimpleDateFormat data = new SimpleDateFormat("MMMM d, yyyy", Locale.ENGLISH);
         String dataFormatada;
         if (getData_added() != null) {
@@ -428,35 +263,12 @@ public class InsercaoOrd {
         return valor;
     }
 
-    public static void ordenaTitulo(Show shows[], int tam, int[] movi, int[] comp) {
-        // Estruta de seleção para ordenar os shows pelo titulo
-        for (int i = 0; i < (tam - 1); i++) {
-            int indiceMin = i;
-            for (int j = (i + 1); j < tam; j++) {
-                if (shows[j].getType().equals(shows[indiceMin].getType())) {
-                    comp[0]++;
-                    if (shows[j].getTitle().compareTo(shows[indiceMin].getTitle()) < 0) {
-                        indiceMin = j;
-                    }
-                }
-
-            }
-            if (indiceMin != i) {
-                movi[0]++;
-                Show temp = shows[i];
-                shows[i] = shows[indiceMin];
-                shows[indiceMin] = temp;
-            }
-        }
-    }
-
     public static void ordenaInser(Show shows[], int tam, int[] movi, int[] comp) {
         // Estrutura do inserção para strings
         for (int i = 1; i < tam; i++) {
             Show menor = shows[i];
             int j = i - 1;
-            // compara o show[j] com o menor, caso o resultado der menor que 0, significa
-            // que é menor
+            // Troca os elementos pelo elemento anterior de titulo e tipo
             while (j >= 0 && (menor.getType().compareToIgnoreCase(shows[j].getType()) < 0 ||
                     (menor.getType().compareToIgnoreCase(shows[j].getType()) == 0 &&
                             menor.getTitle().compareToIgnoreCase(shows[j].getTitle()) < 0))) {
@@ -468,7 +280,6 @@ public class InsercaoOrd {
             shows[j + 1] = menor;
             movi[0]++;
         }
-        // ordenaTitulo(shows, tam, movi, comp);
     }
 
     public static void main(String[] args) {
