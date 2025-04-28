@@ -1,9 +1,12 @@
+#define _XOPEN_SOURCE 700
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <strings.h>
 #include <ctype.h>
 #include <stdbool.h>
 #include <time.h>
+#include <locale.h>
 
 #define MAX_LINE 1024
 #define MAX_SHOWS 500
@@ -16,7 +19,7 @@ typedef struct {
     char **cast;
     int cast_count;
     char *country;
-    char *data_added;
+    time_t data_added;
     int release_year;
     char *rating;
     char *duration;
@@ -34,7 +37,7 @@ void init_show(Show *s) {
     s->cast = NULL;
     s->cast_count = 0;
     s->country = NULL;
-    s->data_added = NULL;
+    s->data_added = (time_t)-1;
     s->release_year = 0;
     s->rating = NULL;
     s->duration = NULL;
@@ -49,7 +52,6 @@ void free_show(Show *s) {
     if(s->title) free(s->title);
     if(s->director) free(s->director);
     if(s->country) free(s->country);
-    if(s->data_added) free(s->data_added);
     if(s->rating) free(s->rating);
     if(s->duration) free(s->duration);
     if(s->cast) {
@@ -95,6 +97,15 @@ int contaAtores(const char *line, int pos) {
 }
 
 void imprimir_show(const Show *s) {
+    char date_str[32];
+    if (s->data_added == (time_t)-1) {
+        strcpy(date_str, "NaN");
+    } else {
+        struct tm *tm_ptr = localtime(&s->data_added);
+        // %-d: dia sem padding (sem zero ou espaço à esquerda)
+        strftime(date_str, sizeof(date_str), "%B %-d, %Y", tm_ptr);
+    }
+
     // Monta a string de "cast" com o formato "[elem1, elem2, ...]"
     char elenco[1024] = "[";
     if (s->cast) {
@@ -117,9 +128,6 @@ void imprimir_show(const Show *s) {
     }
     strcat(categorias, "]");
 
-    // Se a data não foi definida, imprime "NaN"
-    char *dataFormatada = (s->data_added != NULL) ? s->data_added : "NaN";
-
     printf("=> %s ## %s ## %s ## %s ## %s ## %s ## %s ## %d ## %s ## %s ## %s ##\n",
         s->show_ID ? s->show_ID : "NaN",
         s->title ? s->title : "NaN",
@@ -127,7 +135,7 @@ void imprimir_show(const Show *s) {
         s->director ? s->director : "NaN",
         elenco,
         s->country ? s->country : "NaN",
-        dataFormatada,
+        date_str,
         s->release_year,
         s->rating ? s->rating : "NaN",
         s->duration ? s->duration : "NaN",
@@ -175,7 +183,12 @@ void separa_e_ordena(char ***destino, char *texto) {
     ordena(*destino, quantidade);
 }
 
-
+time_t converter_data(const char *texto) {
+    if (texto == NULL || texto[0] == '\0') return (time_t)-1;
+    struct tm tm_data = {0};
+    if (strptime(texto, "%B %d, %Y", &tm_data) == NULL) return (time_t)-1;
+    return mktime(&tm_data);
+}
 
 void interpreta(Show *s, char *linha) {
     char campo_temp[1024];
@@ -232,8 +245,8 @@ void interpreta(Show *s, char *linha) {
         separa_e_ordena(&s->listed_in, campos[10]);
     }
 
-    // Trata data_added
-    s->data_added = (campos[6][0] == '\0') ? NULL : strdup(campos[6]); // Pode fazer parse depois se quiser
+    // Converte o texto de data no tipo data
+    s->data_added = converter_data(campos[6]);
 
     // Trata release_year
     s->release_year = (campos[7][0] == '\0') ? 0 : atoi(campos[7]);
@@ -280,7 +293,7 @@ void clone(Show *original, Show *clone){
     clone->title = strdup(original->title);
     clone->director = strdup(original->director);
     clone->country = strdup(original->country);
-    clone->data_added = original->data_added ? strdup(original->data_added) : NULL;
+    clone->data_added = original->data_added;
     clone->release_year = original->release_year;
     clone->rating = strdup(original->rating);
     clone->duration = strdup(original->duration);
@@ -297,28 +310,67 @@ void clone(Show *original, Show *clone){
     }
 }
 
-void shellSort(Show shows[], int tam, int *comp, int *mov){
-    for (int esp = tam / 2; esp > 0; esp /= 2) {
-        // Percorre todos os elementos a partir do índice 'esp' que é o espaço de analise
-        for (int i = esp; i < tam; i++) {
-            Show temp = shows[i];
-            int j = i;
-            
-            // Compara e ordena primeiro por type, e como desenpate title
-            while (j >= esp && (strcmp(shows[j - esp].type, temp.type) > 0 || 
-                (strcmp(shows[j - esp].type, temp.type) == 0 && strcmp(shows[j - esp].title, temp.title) > 0))) {
-                (*comp)++;
-                (*mov)++;
-                shows[j] = shows[j - esp];
-                j -= esp;
-            }
-            shows[j] = temp;
-            (*mov)++;
+int compararDataTitulo(const Show *a, const Show *b) {
+    int resultado;
+    // Faz as comparações entre 2 shows para ver quem é primeiro
+    if (a->data_added < b->data_added){
+        resultado = -1;
+    }
+    else if (a->data_added > b->data_added){
+        resultado = 1;
+    }
+    else{
+        // Se as datas forem iguais, o desempate é feito pelo titulo
+        resultado = strcasecmp(a->title, b->title);
+    }
+    return resultado;
+}
+
+void trocaShows(Show *x, Show *y) {
+    // Função de swap
+    Show tmp = *x;
+    *x = *y;
+    *y = tmp;
+}
+
+int particiona(Show vetor[], int esq, int dir, int *comp, int *mov) {
+    // Função responsável pelo particionamento do quickSort
+    Show pivo = vetor[(esq + dir) / 2];
+    int i = esq, j = dir;
+
+    while (i <= j) {
+        // encontra elemento >= pivô à esquerda
+        while (compararDataTitulo(&vetor[i], &pivo) < 0){
+            i++;
+            (*comp)++;
         }
+        // encontra elemento <= pivô à direita
+        while (compararDataTitulo(&vetor[j], &pivo) > 0){
+            j--;
+            (*comp)++;
+        }
+
+        if (i <= j) {
+            (*mov)++;
+            trocaShows(&vetor[i], &vetor[j]);
+            i++; 
+            j--;
+        }
+    }
+    return i;
+}
+
+void quickSort(Show vetor[], int esq, int dir, int *comp, int *mov) {
+    // Função principal do quickSort
+    if (esq < dir) {
+        int meio = particiona(vetor, esq, dir, comp, mov);
+        quickSort(vetor, esq, meio - 1, comp, mov);
+        quickSort(vetor, meio, dir, comp, mov);
     }
 }
 
 int main() {
+    setlocale(LC_TIME, "C");
     char entrada[MAX_LINE];
     Show shows[MAX_SHOWS];
     int tam = 0;
@@ -345,7 +397,8 @@ int main() {
         }
     }
     int comps = 0, mov = 0;
-    shellSort(shows, tam, &comps, &mov);
+    // Chama o quick sort para ordenar o array 
+    quickSort(shows, 0, tam - 1, &comps, &mov);
     // libera a memoria alocada
     for (int i = 0; i < tam; i++) {
         imprimir_show(&shows[i]);
@@ -354,7 +407,7 @@ int main() {
     // calculo final do tempo, e impressão de todos os dados para o log
     clock_t fim = clock();
     double tempo = ((double) (fim - inicio) / CLOCKS_PER_SEC) * 1000;
-    FILE* log = fopen("matricula_shellsort.txt", "w");
+    FILE* log = fopen("matricula_quicksort.txt", "w");
     fprintf(log, "869899\t%d\t%d\t%.4lf", comps, mov, tempo);
     return 0;
 }
