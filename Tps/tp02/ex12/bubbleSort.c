@@ -85,17 +85,6 @@ int ehFim(const char *entrada) {
     return (strcmp(entrada, "FIM") == 0);
 }
 
-// Conta quantos segmentos (atores ou categorias) existem, contando as vírgulas até o fechamento da aspa.
-int contaAtores(const char *line, int pos) {
-    int count = 1;
-    int len = strlen(line);
-    while (pos < len && line[pos] != '"') {
-        if (line[pos] == ',') count++;
-        pos++;
-    }
-    return count;
-}
-
 void imprimir_show(const Show *s) {
     char date_str[32];
     if (s->data_added == (time_t)-1) {
@@ -310,48 +299,43 @@ void clone(Show *original, Show *clone){
     }
 }
 
-
-void ordenaTitulos(Show shows[], int tam){
-    // Função que utiliza o algoritmo de seleção para ordenar os shows por titulos
-    for(int i = 0; i < tam - 1; i++){
-        int indiceMin = i;
-        for(int j = i+1; j < tam; j++){
-            if(strcmp(shows[j].title, shows[indiceMin].title) < 0){
-                indiceMin = j;
-            }
-        }
-        if(indiceMin != i){
-            Show temp = shows[i];
-            shows[i] = shows[indiceMin];
-            shows[indiceMin] = temp;
-        }
+int compararDataTitulo(const Show *a, const Show *b) {
+    int resultado;
+    // Faz as comparações entre 2 shows para ver quem é primeiro
+    if (a->data_added < b->data_added){
+        resultado = -1;
     }
+    else if (a->data_added > b->data_added){
+        resultado = 1;
+    }
+    else{
+        // Se as datas forem iguais, o desempate é feito pelo titulo
+        resultado = strcasecmp(a->title, b->title);
+    }
+    return resultado;
 }
 
-bool buscaTitulo(Show shows[], int tam, char chave[], int *comparacoes){
-    // Função que realiza a busca binaria
-    int esq = 0;
-    int dir = tam - 1;
-    bool achou = false;
-    while(esq <= dir && !achou){
-        int meio = (esq + dir) / 2;
-        // O se o strcmp retorna < 0, significa que a string desejada esta a direita, caso contrario esta a esquerda
-        int resultado = strcmp(shows[meio].title, chave);
-        (*comparacoes)++; // contabiliza a quantidade de comparações na busca binaria
-        if(resultado == 0){
-            achou = true;
-        }
-        else if(resultado < 0){
-            esq = meio + 1;
-        }
-        else{
-            dir = meio - 1;
+void trocaShows(Show *x, Show *y) {
+    // Função de swap
+    Show tmp = *x;
+    *x = *y;
+    *y = tmp;
+}
+
+void bubbleSort(Show shows[], int tam, int *comp, int *mov){
+    for(int i = 0; i < tam - 1; i++){
+        for(int j = 0; j < (tam - i - 1); j++){
+            (*comp)++;
+            if(compararDataTitulo(&shows[j], &shows[j+1]) > 0){
+                trocaShows(&shows[j], &shows[j+1]);
+                (*mov)++;
+            }
         }
     }
-    return achou;
 }
 
 int main() {
+    setlocale(LC_TIME, "C");
     char entrada[MAX_LINE];
     Show shows[MAX_SHOWS];
     int tam = 0;
@@ -360,7 +344,7 @@ int main() {
     for (int i = 0; i < MAX_SHOWS; i++) {
         init_show(&shows[i]);
     }
-    
+
     // Se a entrada tiver '\n' troca por '\0' que é a representação de fim da string e conseguir comparar corretamente as strings
     fgets(entrada, MAX_LINE, stdin);
     size_t len = strlen(entrada);
@@ -377,35 +361,18 @@ int main() {
             entrada[len-1] = '\0';
         }
     }
-    fgets(entrada, MAX_LINE, stdin);
-    len = strlen(entrada);
-        if(len > 0 && entrada[len-1]=='\n'){
-            entrada[len-1] = '\0';
-        }
-    ordenaTitulos(shows, tam);
-    int comps = 0;
-    while(!ehFim(entrada)){
-        // Realiza a busca binaria, que retorna um booleano
-        bool encontrado = buscaTitulo(shows, tam, entrada, &comps);        
-        if(encontrado){
-            printf("SIM\n");
-        }
-        else{
-            printf("NAO\n");
-        }
-        fgets(entrada, MAX_LINE, stdin);
-        len = strlen(entrada);
-        if(len > 0 && entrada[len-1]=='\n'){
-            entrada[len-1] = '\0';
-        }
-    }
+    int comps = 0, mov = 0;
+    // Chama o quick sort para ordenar o array 
+    bubbleSort(shows, tam, &comps, &mov);
     // libera a memoria alocada
     for (int i = 0; i < tam; i++) {
+        imprimir_show(&shows[i]);
         free_show(&shows[i]);
     }
+    // calculo final do tempo, e impressão de todos os dados para o log
     clock_t fim = clock();
     double tempo = ((double) (fim - inicio) / CLOCKS_PER_SEC) * 1000;
-    FILE* log = fopen("matrícula_binaria.txt", "w");
-    fprintf(log, "869899\t%.4lf\t%d", tempo, comps);
+    FILE* log = fopen("matricula_bolha.txt", "w");
+    fprintf(log, "869899\t%d\t%d\t%.4lf", comps, mov, tempo);
     return 0;
 }
