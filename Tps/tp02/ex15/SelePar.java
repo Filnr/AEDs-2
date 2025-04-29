@@ -104,11 +104,7 @@ class Show {
         return show_ID;
     }
 
-    public int getRelease_year() {
-        return release_year;
-    }
-
-    private static final SimpleDateFormat dateFormat = new SimpleDateFormat("MMMM d, yyyy", Locale.ENGLISH);
+    private static final SimpleDateFormat dateFormat = new SimpleDateFormat("MMMM d, yyyy", Locale.ENGLISH); 
 
     public Show() {
         show_ID = "NaN";
@@ -125,8 +121,7 @@ class Show {
     }
 
     public Show(int id) {
-        // Construtor responsavel por ler a linha exata do id lido, e chamar a função
-        // responsavel pela leitura e atribuição
+        // Construtor responsavel por ler a linha exata do id lido, e chamar a função responsavel pela leitura e atribuição
         String caminho = "/tmp/disneyplus.csv";
         String linha = "";
         int contador = 0;
@@ -151,8 +146,7 @@ class Show {
         boolean temAspas = false;
         for (int i = 0; i < linha.length(); i++) {
             char letra = linha.charAt(i);
-            // Estrutura responsavel por interpretar o inicio e fim de cada campo, e
-            // adicionar as letras
+            // Estrutura responsavel por interpretar o inicio e fim de cada campo, e adicionar as letras
             if (letra == '"') {
                 temAspas = !temAspas;
             } else if (letra == ',' && !temAspas) {
@@ -170,7 +164,7 @@ class Show {
         this.type = campos[1].trim().equalsIgnoreCase("movie") ? "Movie" : "TV Show";
         this.title = campos[2];
         this.director = campos[3].equals("") ? "NaN" : campos[3];
-        this.cast = campos[4].equals("") ? new String[] { "NaN" } : campos[4].split(", ");
+        this.cast = campos[4].equals("") ? new String[]{"NaN"} : campos[4].split(", ");
         if (this.cast.length > 1) {
             Ordena(this.cast);
         }
@@ -182,9 +176,9 @@ class Show {
         }
         this.release_year = campos[7].equals("") ? 0 : Integer.parseInt(campos[7]);
         this.rating = campos[8];
-        this.duration = campos[9].equals("") ? "NaN" : campos[9];
-        this.listed_in = campos[10].equals("") ? new String[] { "NaN" } : campos[10].split(", ");
-        if (this.listed_in.length > 1) {
+        this.duration = campos[9];
+        this.listed_in = campos[10].equals("") ? new String[]{"NaN"} : campos[10].split(", ");
+        if(this.listed_in.length > 1) {
             Ordena(this.listed_in);
         }
     }
@@ -201,13 +195,13 @@ class Show {
         clonado.type = this.type;
         clonado.title = this.title;
         clonado.director = this.director;
-        clonado.cast = this.cast != null ? Arrays.copyOf(this.cast, this.cast.length) : null;
+        clonado.cast = this.cast.clone();
         clonado.country = this.country;
         clonado.data_added = this.data_added;
         clonado.duration = this.duration;
         clonado.rating = this.rating;
         clonado.release_year = this.release_year;
-        clonado.listed_in = this.listed_in != null ? Arrays.copyOf(this.listed_in, this.listed_in.length) : null;
+        clonado.listed_in = this.listed_in.clone();
         return clonado;
     }
 
@@ -244,7 +238,7 @@ class Show {
     }
 }
 
-public class MergeSort {
+public class SelePar{
     public static boolean ehFim(String entrada) {
         // Função responsavel por verificar se a entrada recebida é FIM
         Boolean fim = false;
@@ -269,79 +263,29 @@ public class MergeSort {
         return valor;
     }
 
-    private static int compararDuracaoTitulo(Show a, Show b) {
-        // realiza as comparações para ordenação
-        int diferenca = a.getDuration().compareToIgnoreCase(b.getDuration());
-        int resultado;
-        if(diferenca != 0){
-            resultado = diferenca;
-        }
-        else{
-            resultado = a.getTitle().compareToIgnoreCase(b.getTitle());
-        }
-        return resultado;
+    private static void troca(Show[] shows, int i, int j) {
+        Show temp = shows[i];
+        shows[i] = shows[j];
+        shows[j] = temp;
     }
-    
-    private static void merge(Show[] shows, int inicio, int meio, int fim, int[] comp, int[] mov) {
-        int tamanhoEsq = meio - inicio + 1;
-        int tamanhoDir = fim - meio;
-    
-        Show[] esquerda = new Show[tamanhoEsq];
-        Show[] direita = new Show[tamanhoDir];
-    
-        // Copia dados para vetores temporários
-        for (int i = 0; i < tamanhoEsq; i++) {
-            esquerda[i] = shows[inicio + i];
-            mov[0]++;
-        }
-        for (int j = 0; j < tamanhoDir; j++) {
-            direita[j] = shows[meio + 1 + j];
-            mov[0]++;
-        }
-    
-        int i = 0, j = 0, k = inicio;
-    
-        // Combina as duas metades ordenadas
-        while (i < tamanhoEsq && j < tamanhoDir) {
-            comp[0]++; // Comparação de elementos
-            if (compararDuracaoTitulo(esquerda[i], direita[j]) <= 0) {
-                shows[k++] = esquerda[i++];
-                mov[0]++;
-            } else {
-                shows[k++] = direita[j++];
-                mov[0]++;
+
+    public static void ordenaSelecao(Show shows[], int tam, int[] movi, int[] comp, int k) {
+        // Estrutura do seleção, A diferença para o parcial é o for externo que vai até k - 1 ao inves de tam - 2
+        for (int i = 0; i < k; i++) {
+            int indiceMin = i;
+            for (int j = (i + 1); j < tam; j++) {
+                comp[0]++;
+                if (shows[j].getTitle().compareToIgnoreCase(shows[indiceMin].getTitle()) < 0) {
+                    indiceMin = j;
+                }
+            }
+            if (indiceMin != i) {
+                troca(shows, i, indiceMin);
+                movi[0]++;
+                
             }
         }
-    
-        // Copia elementos restantes da esquerda
-        while (i < tamanhoEsq) {
-            shows[k++] = esquerda[i++];
-            mov[0]++;
-        }
-    
-        // Copia elementos restantes da direita
-        while (j < tamanhoDir) {
-            shows[k++] = direita[j++];
-            mov[0]++;
-        }
     }
-    
-    private static void mergeSort(Show[] shows, int inicio, int fim, int[] comp, int[] mov) {
-        // Algoritmo de merge2
-        if (inicio < fim) {
-            int meio = (inicio + fim) / 2;
-            mergeSort(shows, inicio, meio, comp, mov);
-            mergeSort(shows, meio + 1, fim, comp, mov);
-            merge(shows, inicio, meio, fim, comp, mov);
-        }
-    }
-    
-    public static void mergeSort(Show[] shows, int tam, int[] comp, int[] mov) {
-        if (tam > 1) {
-            mergeSort(shows, 0, tam - 1, comp, mov);
-        }
-    }
-    
 
     public static void main(String[] args) {
         // Inicia o scanner com o UTF-8 para conseguir ler todos os caracteres
@@ -356,10 +300,13 @@ public class MergeSort {
             tam++;
             entrada = ler.nextLine();
         }
+        // Os valores de movimentações e comparações são armazenados em array para ser passado por referencia
         int movi[] = { 0 };
         int comp[] = { 0 };
-        mergeSort(shows, tam, comp, movi);
-        for (int i = 0; i < tam; i++) {
+        // Valor de K para seleção parcial
+        int k = 10;
+        ordenaSelecao(shows, tam, movi, comp, k);
+        for (int i = 0; i < k; i++) {
             shows[i].imprimir();
         }
         ler.close();
@@ -367,8 +314,8 @@ public class MergeSort {
         long fim = System.nanoTime();
         double tempoExec = (fim - inicio) / 1e6;
         try {
-            FileWriter arq = new FileWriter("matricula_mergesort.txt");
-            arq.write("869899" + '\t' + comp[0] + '\t' + movi[0] + '\t' + tempoExec);
+            FileWriter arq = new FileWriter("matricula_SelecaoParcial.txt");
+            arq.write("869899" + '\t' + comp[0] + '\t' + movi[0]+ '\t' + tempoExec);
             arq.close();
         } catch (IOException e) {
             System.out.println(e.getMessage());
