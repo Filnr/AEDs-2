@@ -248,7 +248,7 @@ void interpreta(Show *s, char *linha) {
 
 void show_from_id(Show *s, int id) {
     // Construtor responsavel por buscar o ID
-    FILE *fp = fopen("tmp/disneyplus.csv", "r");
+    FILE *fp = fopen("/tmp/disneyplus.csv", "r");
     if (!fp) {
         perror("Erro ao abrir o arquivo");
         exit(1);
@@ -308,24 +308,31 @@ void toLowerStr(char *str) {
     }
 }
 
-// Função de comparação por diretor e, em caso de empate, por título
+
 int compararDiretorTitulo(Show a, Show b) {
+    // Compara dois objetos Show, priorizando ordem alfabética do diretor
+    // Caso os diretores sejam iguais, o critério de desempate é o título
+
+    // Verifica se o campo director está vazio (ou "NaN") em cada objeto
     if (!a.director || strcmp(a.director, "NaN") == 0) {
-        if (!b.director || strcmp(b.director, "NaN") == 0) return 0; // ambos vazios
-        return 1; // a vazio vem depois
+        if (!b.director || strcmp(b.director, "NaN") == 0) return 0; // Ambos vazios: empate
+        return 1; // Apenas 'a' é vazio: vem depois
     } else if (!b.director || strcmp(b.director, "NaN") == 0) {
-        return -1; // b vazio vem depois
+        return -1; // Apenas 'b' é vazio: 'a' vem antes
     }
 
+    // Converte os nomes dos diretores para minúsculo, garantindo comparação insensível a maiúsculas/minúsculas
     char dirA[256], dirB[256];
     strcpy(dirA, a.director);
     strcpy(dirB, b.director);
     toLowerStr(dirA);
     toLowerStr(dirB);
 
+    // Compara os diretores
     int cmp = strcmp(dirA, dirB);
     if (cmp != 0) return cmp;
 
+    // Se os diretores forem iguais, compara os títulos como critério de desempate
     if (!a.title || strcmp(a.title, "NaN") == 0) {
         if (!b.title || strcmp(b.title, "NaN") == 0) return 0;
         return 1;
@@ -343,16 +350,19 @@ int compararDiretorTitulo(Show a, Show b) {
 }
 
 void swapShows(Show *a, Show *b) {
+    // Troca o conteúdo entre dois objetos Show (swap completo)
     Show temp = *a;
     *a = *b;
     *b = temp;
 }
 
-void heapify(Show arr[], int n, int i, int *comp, int *mov) {
+void heapifyMax(Show arr[], int n, int i, int *comp, int *mov) {
+    // Mantém a propriedade de heap máximo no vetor a partir da posição i
     int maior = i;
-    int esq = 2 * i + 1;
-    int dir = 2 * i + 2;
+    int esq = 2 * i + 1; // Filho da esquerda
+    int dir = 2 * i + 2; // Filho da direita
 
+    // Verifica se o filho da esquerda é maior que o pai
     if (esq < n) {
         (*comp)++;
         if (compararDiretorTitulo(arr[esq], arr[maior]) > 0) {
@@ -360,6 +370,7 @@ void heapify(Show arr[], int n, int i, int *comp, int *mov) {
         }
     }
 
+    // Verifica se o filho da direita é maior que o atual maior
     if (dir < n) {
         (*comp)++;
         if (compararDiretorTitulo(arr[dir], arr[maior]) > 0) {
@@ -367,32 +378,37 @@ void heapify(Show arr[], int n, int i, int *comp, int *mov) {
         }
     }
 
+    // Se o maior não for o próprio pai, troca e chama recursivamente para manter a estrutura
     if (maior != i) {
         swapShows(&arr[i], &arr[maior]);
         (*mov)++;
-        heapify(arr, n, maior, comp, mov);
+        heapifyMax(arr, n, maior, comp, mov);
     }
 }
 
 
 void heapParcial(Show arr[], int tam, int k, int *comp, int *mov) {
-    // Constrói o heap máximo com base em 'title'
-    for (int i = tam / 2 - 1; i >= 0; i--) {
-        heapify(arr, tam, i, comp, mov);
+    // Cria um heap máximo com os k primeiros elementos
+    for (int i = k / 2 - 1; i >= 0; i--) {
+        heapifyMax(arr, k, i, comp, mov);
     }
 
-    // Extrai os k maiores títulos e coloca nas últimas posições
-    for (int i = tam - 1; i >= tam - k; i--) {
-        swapShows(&arr[0], &arr[i]);
-        (*mov)++;
-        heapify(arr, i, 0, comp, mov);
+    // Percorre os elementos restantes e mantém os k menores
+    for (int i = k; i < tam; i++) {
+        if (compararDiretorTitulo(arr[i], arr[0]) < 0) {
+            swapShows(&arr[i], &arr[0]);
+            (*mov)++;
+            heapifyMax(arr, k, 0, comp, mov);
+        } else {
+            (*comp)++;
+        }
     }
 
-    // Ordena os k extraídos (os últimos k do vetor)
-    for (int i = tam - k + 1; i < tam; i++) {
+    // Ordena os k menores
+    for (int i = 1; i < k; i++) {
         Show temp = arr[i];
         int j = i - 1;
-        while (j >= tam - k && compararDiretorTitulo(arr[j], temp) > 0) {
+        while (j >= 0 && compararDiretorTitulo(arr[j], temp) > 0) {
             arr[j + 1] = arr[j];
             j--;
             (*comp)++;
@@ -402,6 +418,7 @@ void heapParcial(Show arr[], int tam, int k, int *comp, int *mov) {
         (*mov)++;
     }
 }
+
 
 int main() {
     setlocale(LC_TIME, "C");

@@ -123,7 +123,7 @@ class Show {
     public Show(int id) {
         // Construtor responsavel por ler a linha exata do id lido, e chamar a função
         // responsavel pela leitura e atribuição
-        String caminho = "tmp/disneyplus.csv";
+        String caminho = "/tmp/disneyplus.csv";
         String linha = "";
         int contador = 0;
         boolean encontrado = false;
@@ -266,71 +266,84 @@ public class QuickSort {
     }
 
     public static int compararPorDataTitulo(Show a, Show b) {
-        // Comparador responsavel por retornar o valor da comparação de date_added e title
+        // Função comparadora entre dois objetos Show, com base na data_added
+        // Em caso de empate, usa o título como critério de desempate
         Date dataA = a.getData_added();
         Date dataB = b.getData_added();
-
+    
         if (dataA == null && dataB == null)
             return a.getTitle().compareToIgnoreCase(b.getTitle());
         if (dataA == null)
-            return 1;
+            return 1; // objetos com data nula vêm depois
         if (dataB == null)
             return -1;
-
+    
         int compData = dataA.compareTo(dataB);
         if (compData != 0)
             return compData;
-
+    
         return a.getTitle().compareToIgnoreCase(b.getTitle());
     }
+    
 
     public static void quickSortParcial(Show[] shows, int esq, int dir, int k, int[] comp, int[] mov) {
+        // QuickSort parcial que ordena apenas os k menores elementos do vetor
         if (esq >= dir) return;
-
+    
         int i = esq, j = dir;
-        Show pivo = shows[(esq + dir) / 2];
-
+        Show pivo = shows[(esq + dir) / 2]; // Escolhe pivô central
+    
+        // Particiona o vetor com base no date_added e title
         while (i <= j) {
             while (validacao(shows[i], pivo, comp) < 0) i++;
             while (validacao(shows[j], pivo, comp) > 0) j--;
-
+    
             if (i <= j) {
-                troca(shows, i, j, mov);
+                troca(shows, i, j);
                 i++;
                 j--;
             }
         }
-
+    
+        // Chama recursivamente apenas onde necessário:
+        // Se j >= k, não precisa ordenar a parte da direita, pois já temos os k menores na esquerda
         if (esq < j && j >= k) {
             quickSortParcial(shows, esq, j, k, comp, mov);
         } else {
+            // Processa ambos os lados se necessário para garantir os k menores
             quickSortParcial(shows, esq, j, k, comp, mov);
             quickSortParcial(shows, i, dir, k, comp, mov);
         }
     }
+    
 
-    private static void troca(Show[] arr, int i, int j, int[] mov) {
+    private static void troca(Show[] arr, int i, int j) {
+        // Função responsavel por realizar a troca de shows
         Show temp = arr[i];
         arr[i] = arr[j];
         arr[j] = temp;
-        mov[0] += 3;
     }
 
     public static int validacao(Show a, Show b, int[] comp) {
+        // Função usada para contar comparações e aplicar a regra de ordenação (data_added -> título)
         comp[0]++;
         Date da = a.getData_added();
         Date db = b.getData_added();
-
-        if (da == null && db == null) return 0;
+    
+        if (da == null && db == null) {
+            comp[0]++;
+            return a.getTitle().compareToIgnoreCase(b.getTitle());
+        }
         if (da == null) return 1;
         if (db == null) return -1;
-
+    
         int cmp = da.compareTo(db);
         if (cmp != 0) return cmp;
-
+    
         comp[0]++;
         return a.getTitle().compareToIgnoreCase(b.getTitle());
     }
+    
 
     public static void main(String[] args) {
         // Inicia o scanner com o UTF-8 para conseguir ler todos os caracteres
