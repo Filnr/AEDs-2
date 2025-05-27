@@ -10,7 +10,7 @@ class Show {
     private String director;
     private String[] cast;
     private String country;
-    private Date data_added;
+    private Date date_added;
     private int release_year;
     private String rating;
     private String duration;
@@ -40,8 +40,8 @@ class Show {
         this.country = country;
     }
 
-    public void setDate(Date data_added) {
-        this.data_added = data_added;
+    public void setDate(Date date_added) {
+        this.date_added = date_added;
     }
 
     public void setRelease_year(int release_year) {
@@ -84,8 +84,8 @@ class Show {
         return this.country;
     }
 
-    public Date getData_added() {
-        return this.data_added;
+    public Date getDate_added() {
+        return this.date_added;
     }
 
     public String getDuration() {
@@ -113,31 +113,11 @@ class Show {
         director = "NaN";
         cast = null;
         country = "NaN";
-        data_added = null;
+        date_added = null;
         release_year = 0;
         rating = "NaN";
         duration = "NaN";
         listed_in = null;
-    }
-
-    public Show(int id) {
-        // Construtor responsavel por ler a linha exata do id lido, e chamar a função
-        // responsavel pela leitura e atribuição
-        String caminho = "/tmp/disneyplus.csv";
-        String linha = "";
-        int contador = 0;
-        boolean encontrado = false;
-        try (BufferedReader ler = new BufferedReader(new FileReader(caminho))) {
-            while ((linha = ler.readLine()) != null && !encontrado) {
-                if (contador == id) {
-                    ler(linha);
-                    encontrado = true;
-                }
-                contador++;
-            }
-        } catch (IOException erro) {
-            erro.printStackTrace();
-        }
     }
 
     private int extraiId(String entrada) {
@@ -156,7 +136,7 @@ class Show {
     public Show(String entrada) {
         // Construtor responsavel por ler a linha exata do id lido, e chamar a função
         // responsavel pela leitura e atribuição
-        String caminho = "./tmp/disneyplus.csv";
+        String caminho = "/tmp/disneyplus.csv";
         int id = extraiId(entrada);
         String linha = "";
         int contador = 0;
@@ -206,9 +186,9 @@ class Show {
         }
         this.country = campos[5].equals("") ? "NaN" : campos[5];
         try {
-            this.data_added = campos[6].equals("") ? null : dateFormat.parse(campos[6]);
+            this.date_added = campos[6].equals("") ? null : dateFormat.parse(campos[6]);
         } catch (Exception e) {
-            this.data_added = null;
+            this.date_added = null;
         }
         this.release_year = campos[7].equals("") ? 0 : Integer.parseInt(campos[7]);
         this.rating = campos[8];
@@ -228,7 +208,7 @@ class Show {
         clonado.director = this.director;
         clonado.cast = this.cast.clone();
         clonado.country = this.country;
-        clonado.data_added = this.data_added;
+        clonado.date_added = this.date_added;
         clonado.duration = this.duration;
         clonado.rating = this.rating;
         clonado.release_year = this.release_year;
@@ -256,15 +236,15 @@ class Show {
 
     public void imprimir() {
         // antes de começar a impressão, ordena os vetores que precisam ser ordenados
-        SimpleDateFormat data = new SimpleDateFormat("MMMM d, yyyy", Locale.ENGLISH);
-        String dataFormatada;
-        if (getData_added() != null) {
-            dataFormatada = data.format(getData_added());
+        SimpleDateFormat date = new SimpleDateFormat("MMMM d, yyyy", Locale.ENGLISH);
+        String dateFormatada;
+        if (getDate_added() != null) {
+            dateFormatada = date.format(getDate_added());
         } else {
-            dataFormatada = "NaN";
+            dateFormatada = "NaN";
         }
         System.out.printf("=> %s ## %s ## %s ## %s ## %s ## %s ## %s ## %d ## %s ## %s ## %s ##\n",
-                show_ID, title, type, director, Arrays.toString(cast), country, dataFormatada, release_year,
+                show_ID, title, type, director, Arrays.toString(cast), country, dateFormatada, release_year,
                 rating, duration, Arrays.toString(listed_in));
     }
 }
@@ -284,7 +264,8 @@ public class Lista {
         if (tam >= lista.length)
             throw new Exception();
         // Insere o show diretamente na ultima posição e em seguida incrementa tam
-        lista[tam++] = show;
+        lista[tam] = show;
+        tam++;
     }
 
     public void inserirInicio(Show show) throws Exception {
@@ -303,10 +284,10 @@ public class Lista {
     public void inserir(Show show, int pos) throws Exception {
         // Tratamento de excessão para caso a posição ou o tamanho saia do tamanho do
         // array
-        if (tam >= lista.length || pos > tam || pos < 0)
+        if (tam >= lista.length || pos < 0 || pos >= tam)
             throw new Exception();
         // Abre espaço na posição para ser inserido o show
-        for (int i = pos; i > 0; i--) {
+        for (int i = tam; i > pos; i--) {
             lista[i] = lista[i - 1];
         }
         lista[pos] = show;
@@ -317,35 +298,30 @@ public class Lista {
         // Armazena o elemento a ser removido
         Show removido = lista[0];
         // Disloca os elementos para esquerda, para apagar o inicio
-        for (int i = 0; i < tam - 1; i++) {
+        tam--;
+        for (int i = 0; i < tam; i++) {
             lista[i] = lista[i + 1];
         }
-        tam--;
         return removido;
     }
 
     public Show remover(int pos) throws Exception {
-        System.out.println(lista[pos]);
-        if (pos >= tam)
-            throw new Exception();
+        if (pos >= tam || tam == 0 || pos < 0)
+            throw new Exception("Lista vazia/posição invalida");
         // Armaza o show removido
         Show removido = lista[pos];
+        tam--;
         // Disloca os elementos para ocupar o espaço
-        for (int i = pos; i < tam - 1; i++) {
+        for (int i = pos; i < tam; i++) {
             lista[i] = lista[i + 1];
         }
-        tam--;
         return removido;
     }
 
     public Show removerFim() throws Exception {
-        System.out.println(lista[tam-1]);
         if (tam == 0)
             throw new Exception();
-        tam--;
-        Show removido = lista[tam];
-        lista[tam] = null;
-        return removido;
+        return lista[--tam];
     }
 
     public static boolean ehRemovePos(String comando) {
@@ -361,20 +337,24 @@ public class Lista {
         String entrada = ler.nextLine();
         Lista lista = new Lista();
         Show show;
+        // Declaração do array responsavel por armazenar todos os itens removidos da lista
         ArrayList<String> removidos = new ArrayList<>();
         try {
+            // Primeira parte do codigo, responsavel por ler a primeira parte da entrada
             while (!entrada.equals("FIM")) {
                 show = new Show(entrada);
                 lista.inserirFim(show);
                 entrada = ler.nextLine();
             }
             int n = Integer.parseInt(ler.nextLine());
+            // Segunda parte, responsavel por executar os comandos da entrada
             for (int i = 0; i < n; i++) {
                 entrada = ler.nextLine();
                 String[] partes = entrada.split(" ");
                 String comando = partes[0];
                 String id = "1";
                 int pos = 0;
+                // Altera a leitura dos dados, a depender se do tipo de comando
                 if (ehInsere(comando)) {
                     if (partes.length == 3) {
                         pos = Integer.parseInt(partes[1]);
@@ -385,6 +365,7 @@ public class Lista {
                 } else if (ehRemovePos(comando)) {
                     pos = Integer.parseInt(partes[1]);
                 }
+                // menu responsavel por executrar os comandos
                 switch (comando) {
                     case "II":
                         show = new Show(id);
@@ -409,7 +390,7 @@ public class Lista {
                 }
             }
             for (String title : removidos) {
-                System.out.println("(R)" + title);
+                System.out.println("(R) " + title);
             }
             for (int i = 0; i < lista.tam; i++) {
                 lista.lista[i].imprimir();
