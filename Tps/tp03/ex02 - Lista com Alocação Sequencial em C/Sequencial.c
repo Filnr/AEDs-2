@@ -249,7 +249,7 @@ void interpreta(Show *s, char *linha) {
 void show_from_id(Show *s, char *entrada) {
     int id = converteStr(entrada);
     // Construtor responsavel por buscar o ID
-    FILE *fp = fopen("./tmp/disneyplus.csv", "r");
+    FILE *fp = fopen("/tmp/disneyplus.csv", "r");
     if (!fp) {
         perror("Erro ao abrir o arquivo");
         exit(1);
@@ -351,16 +351,66 @@ Show removerFim(Show lista[], int *tam) {
 }
 
 bool ehInsere(char *comando){
-    return (strcmp(comando, "II") == 0 || strcmp(comando, "IF") == 0 || strcmp(comando, "I*") == 0);
+    return (strcmp(comando, "II") == 0 || strcmp(comando, "IF") == 0);
 }
+
 
 bool ehRemovePos(char *comando) {
     return (strcmp(comando, "R*") == 0);
 }
 
-void freeRemovidos(Show lista[], int tam){
-    for (int i = 0; i < tam; i++) {
-        lista[i] = free
+void separa(char entrada[], char partes[][MAX_LINE]){
+    // Função responsavel por separar cada campo da entrada, em uma string
+    int i = 0, j = 0;
+    int parte = 0;
+    while(entrada[i] != ' '){
+        // Primeiro le o comando, e a depender dele, decide qual tipo de tratamento sera feito
+        partes[parte][j] = entrada[i];
+        i++;
+        j++; 
+    }
+    // Inserção do '\0' que demarca o fim da string
+    partes[parte][j] = '\0';
+    parte++;
+    i++;
+    // Verifica se o comando é 'IF' ou 'II', pois so tem 2 campos, comando/id
+    if(ehInsere(partes[0])){
+        int j = 0;
+        while(entrada[i] != '\0'){
+            partes[parte][j] = entrada[i];
+            j++;
+            i++;
+        }
+        partes[parte][j] = '\0';
+    }
+    // Verifica se o comando é 'I*', pois possui 3 campos, comando/posição/id
+    else if(strcmp(partes[0], "I*") == 0){
+        int j = 0;
+        while(entrada[i] != ' '){
+            partes[parte][j] = entrada[i];
+            i++;
+            j++;
+        }
+        partes[parte][j] = '\0';
+        i++;
+        parte++;
+        j = 0;
+        while(entrada[i] != '\0'){
+            partes[parte][j] = entrada[i];
+            i++;
+            j++;
+        }
+        partes[parte][j] = '\0';
+    }
+    else if(ehRemovePos(partes[0])){
+        // Verifica se é 'R*' pois possui 2 campos, comando/posição
+        int j = 0;
+        while(entrada[i] != '\0'){
+            partes[parte][j] = entrada[i];
+            i++;
+            j++;
+        }
+        partes[parte][j] = '\0';
     }
 }
 
@@ -380,6 +430,7 @@ int main() {
         if(len > 0 && entrada[len-1]=='\n'){
             entrada[len-1] = '\0';
         }
+    // Parte responsavel por ler a primeira parte da entrada
     while(!ehFim(entrada)) {
         show_from_id(&lista[tam], entrada);
         tam++;
@@ -389,73 +440,57 @@ int main() {
             entrada[len-1] = '\0';
         }
     }
+    // Inicio da leitura da 2 parte
     int n;
     scanf("%d", &n);
+    // Declaração do array de strings responsavel por armazenar as strings;
     char **removidos = malloc(100 * sizeof(char*));
     getchar();
     int ind = 0;
     for(int i = 0; i < n; i++){
         fgets(entrada, MAX_LINE, stdin);
+        len = strlen(entrada);
         if(len > 0 && entrada[len-1]=='\n'){
             entrada[len-1] = '\0';
         }
-        char comando[5];
-        char parte2[50];
-        char parte3[50];
-        int pos = 0;
-        char *id;
-        int qtLidos = sscanf(entrada, "%s %s %s", comando, parte2, parte3);
+        // Separa os campos da entrada
+        char partes[3][MAX_LINE];
+        separa(entrada, partes);
         Show show;
-        if(qtLidos >= 1){
-            if(ehInsere(comando)){
-                if(qtLidos == 3){
-                    pos = atoi(parte2);
-                    id = parte3;
-                }
-                else if(qtLidos == 2){
-                    id = parte2;
-                }
-            }
-            else if(ehRemovePos(comando)){
-                if(qtLidos == 2){
-                    pos = atoi(parte2);
-                }
-            }
-
-            if(strcmp(comando, "II") == 0){
-                show_from_id(&show, entrada);
-                inserirInicio(show, lista, &tam);
-            }
-            else if(strcmp(comando, "I*") == 0){
-                show_from_id(&show, entrada);
-                inserir(show, pos, lista, &tam);
-            }
-            else if(strcmp(comando, "IF") == 0) {
-                show_from_id(&show, entrada);
-                inserirFim(show, lista, &tam);
-            }
-            else if(strcmp(comando, "RI") == 0){
-                removidos[ind++] = removerInicio(lista, &tam).title;
-            }
-            else if(strcmp(comando, "R*") == 0){
-                removidos[ind++] = remover(pos, lista, &tam).title;
-            } 
-            else if(strcmp(comando, "RF") == 0) {
-                removidos[ind++] = removerFim(lista, &tam).title;
-            }
-        
-            for(int i = 0; i < ind; i++){
-                printf("(R) %s", removidos[i]);
-            }
+        if(strcmp(partes[0], "II") == 0){
+            show_from_id(&show, partes[1]);
+            inserirInicio(show, lista, &tam);
         }
+        else if(strcmp(partes[0], "I*") == 0){
+            show_from_id(&show, partes[2]);
+            int pos = atoi(partes[1]);
+            inserir(show, pos, lista, &tam);
+        }
+        else if(strcmp(partes[0], "IF") == 0) {
+            show_from_id(&show, partes[1]);
+            inserirFim(show, lista, &tam);
+        }
+        else if(strcmp(partes[0], "RI") == 0){
+            removidos[ind++] = removerInicio(lista, &tam).title;
+        }
+        else if(strcmp(partes[0], "R*") == 0){
+            int pos = atoi(partes[1]);
+            removidos[ind++] = remover(pos, lista, &tam).title;
+        } 
+        else if(strcmp(partes[0], "RF") == 0) {
+            removidos[ind++] = removerFim(lista, &tam).title;
+        }
+    }
+    // Impressão dos removidos
+    for(int i = 0; i < ind; i++){
+        printf("(R) %s\n", removidos[i]);
     }
     // libera a memoria alocada
     for (int i = 0; i < tam; i++) {
         imprimir_show(&lista[i]);
         free_show(&lista[i]);
     }
-    for(int i = 0; i < ind; i++){
-        removidos[i] = null;
-    }
+    free(removidos);
+    removidos = NULL;
     return 0;
 }
