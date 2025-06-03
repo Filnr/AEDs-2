@@ -249,7 +249,7 @@ void interpreta(Show *s, char *linha) {
 void show_from_id(Show *s, char *entrada) {
     int id = converteStr(entrada);
     // Construtor responsavel por buscar o ID
-    FILE *fp = fopen("/tmp/disneyplus.csv", "r");
+    FILE *fp = fopen("./tmp/disneyplus.csv", "r");
     if (!fp) {
         perror("Erro ao abrir o arquivo");
         exit(1);
@@ -275,33 +275,36 @@ void show_from_id(Show *s, char *entrada) {
     }
 }
 
-void clone(Show *original, Show *clone){
-    init_show(clone); // Sempre inicialize antes
+Show clone(Show *original){
+    Show clone;
+    init_show(&clone); // Sempre inicialize antes
 
-    clone->show_ID = strdup(original->show_ID);
-    clone->type = strdup(original->type);
-    clone->title = strdup(original->title);
-    clone->director = strdup(original->director);
-    clone->country = strdup(original->country);
-    clone->data_added = original->data_added;
-    clone->release_year = original->release_year;
-    clone->rating = strdup(original->rating);
-    clone->duration = strdup(original->duration);
+    clone.show_ID = strdup(original->show_ID);
+    clone.type = strdup(original->type);
+    clone.title = strdup(original->title);
+    clone.director = strdup(original->director);
+    clone.country = strdup(original->country);
+    clone.data_added = original->data_added;
+    clone.release_year = original->release_year;
+    clone.rating = strdup(original->rating);
+    clone.duration = strdup(original->duration);
     // primeiro copia a contagem, para depois conseguir copiar completamente cada parte
-    clone->cast_count = original->cast_count;
-    clone->cast = malloc(clone->cast_count * sizeof(char*));
-    for (int i = 0; i < clone->cast_count; i++) {
-        clone->cast[i] = strdup(original->cast[i]);
+    clone.cast_count = original->cast_count;
+    clone.cast = malloc(clone.cast_count * sizeof(char*));
+    for (int i = 0; i < clone.cast_count; i++) {
+        clone.cast[i] = strdup(original->cast[i]);
     }
-    clone->listed_count = original->listed_count;
-    clone->listed_in = malloc(clone->listed_count * sizeof(char*));
-    for (int i = 0; i < clone->listed_count; i++) {
-        clone->listed_in[i] = strdup(original->listed_in[i]);
+    clone.listed_count = original->listed_count;
+    clone.listed_in = malloc(clone.listed_count * sizeof(char*));
+    for (int i = 0; i < clone.listed_count; i++) {
+        clone.listed_in[i] = strdup(original->listed_in[i]);
     }
+    return clone;
 }
+
 // FIM DA CLASSE SHOW
 
-typedef struct {
+typedef struct No{
     Show show;
     struct No *prox;
 } No;
@@ -325,15 +328,15 @@ void inserirFim(Lista *lista, Show show){
         perror("Erro ao alocar memória para o nó");
         exit(EXIT_FAILURE);
     }
-    no->show = clone(&show);
-    no->prox = null;
+    no->show = show;
+    no->prox = NULL;
     if (lista->primeiro == NULL) { // Se a lista está vazia
         lista->primeiro = no;
         lista->ultimo = no;
     }
     else{
         lista->ultimo->prox = no;
-        lista->ultimo = no
+        lista->ultimo = no;
     }
     lista->tam++;
 }
@@ -347,23 +350,47 @@ void inserirInicio(Lista *lista, Show show) {
         perror("Erro ao alocar memória para o nó");
         exit(EXIT_FAILURE);
     }
-    novo->show = clone(&show);
+    novo->show = show;
     novo->prox = lista->primeiro;
     lista->primeiro = novo;
     // Se a lista estava vazia, ultimo vai apontar para o novo NO
     if (lista->ultimo == NULL) {
         lista->ultimo = novo;
     }
-    lista->tamanho++;
+    lista->tam++;
 }
 
-void inserir(Show show, int pos, Show lista[], int *tam) {
-    // Abre espaço na posição para ser inserido o show
-    for (int i = *tam; i > pos; i--) {
-        lista[i] = lista[i - 1];
+void inserir(Show show, int pos, Lista *lista) {
+    if (pos < 0 || pos > lista->tam) {
+        return;
     }
-    lista[pos] = show;
-    (*tam)++;
+    // A posição de inserção pode ser até o tamanho atual da lista (para inserir no final)
+    if (pos < 0 || pos > lista->tam) {
+        return;
+    }
+    if(pos == 0){
+        inserirInicio(lista, show);
+    }
+    else if(pos == lista->tam){
+        inserirFim(lista, show);
+    }
+    else{
+        No *novo = (No *)malloc(sizeof(No));
+        if (novo == NULL) {
+            perror("Erro ao alocar memória para o novo nó na inserção intermediária");
+            exit(EXIT_FAILURE); // Ou return; dependendo da sua política de tratamento de erros
+        }
+        novo->show = show;
+        novo->prox = NULL;
+        No *atual = lista->primeiro;
+        int i = 0;
+        while (atual != NULL && i < pos - 1) { // CORRIGIDO a lógica do loop
+            atual = atual->prox; // CORRIGIDO: de atual.prox para atual->prox
+            i++;
+        }
+        novo->prox = atual->prox;
+        atual->prox = novo;
+    }
 }
 
 void removerInicio(Lista *lista) {
@@ -371,12 +398,15 @@ void removerInicio(Lista *lista) {
     Show removido = no->show;
 
     lista->primeiro = no->prox;
+    printf("(R) %s\n", removido.title);
     free(no);
-    lista->tamanho--;
-    printf("(R) %s", removido.title);
+    lista->tam--;
 }
 
 void removerFim(Lista *lista) {
+    if (lista == NULL || lista->primeiro == NULL) {
+        return; // Sai da função sem tentar remover
+    }
     No *atual = lista->primeiro;
     No *anterior = NULL;
     while(atual->prox != NULL){
@@ -386,26 +416,34 @@ void removerFim(Lista *lista) {
     Show removido = atual->show;
     anterior->prox = NULL;
     lista->ultimo = anterior;
-    lista->tam--:
-    printf("(R) %s", removido.title);
+    lista->tam--;
+    printf("(R) %s\n", removido.title);
 }
 
 void remover(Lista *lista, int pos) {
-    No *atual = lista->primeiro;
-    No *anterior = NULL:
-    int i = 0;
-    while(atual != NULL && i < pos){
-        anterior = atual;
-        atual = atual->prox;
+    if(pos == 0){
+        removerInicio(lista);
     }
-    Show removido = atual->show;
-    anterior.prox = atual->prox;
-    
+    else if(pos == lista->tam - 1){
+        removerFim(lista);
+    }
+    else{
+        No *atual = lista->primeiro;
+        No *anterior = NULL;
+        int i = 0;
+        while(atual != NULL && i < pos){
+            anterior = atual;
+            atual = atual->prox;
+            i++;
+        }
 
-    printf("(R) %s", removido.title);
+        Show removido = atual->show;
+        anterior->prox = atual->prox;
+        printf("(R) %s\n", removido.title);
+        free(atual);
+        lista->tam--;
+    }
 }
-
-
 
 bool ehInsere(char *comando){
     return (strcmp(comando, "II") == 0 || strcmp(comando, "IF") == 0);
@@ -474,13 +512,9 @@ void separa(char entrada[], char partes[][MAX_LINE]){
 int main() {
     setlocale(LC_TIME, "C");
     char entrada[MAX_LINE];
-    Show lista[MAX_SHOWS];
-    int tam = 0;
-    // Inicializa todos os objetos no array
-    for (int i = 0; i < MAX_SHOWS; i++) {
-        init_show(&lista[i]);
-    }
-
+    Lista lista;
+    inicializarLista(&lista);
+    Show show;
     // Se a entrada tiver '\n' troca por '\0' que é a representação de fim da string e conseguir comparar corretamente as strings
     fgets(entrada, MAX_LINE, stdin);
     size_t len = strlen(entrada);
@@ -489,8 +523,9 @@ int main() {
         }
     // Parte responsavel por ler a primeira parte da entrada
     while(!ehFim(entrada)) {
-        show_from_id(&lista[tam], entrada);
-        tam++;
+        show_from_id(&show, entrada);
+        inserirInicio(&lista, show);
+        lista.tam++;
         fgets(entrada, MAX_LINE, stdin);
         len = strlen(entrada);
         if(len > 0 && entrada[len-1]=='\n'){
@@ -500,8 +535,6 @@ int main() {
     // Inicio da leitura da 2 parte
     int n;
     scanf("%d", &n);
-    // Declaração do array de strings responsavel por armazenar as strings;
-    char **removidos = malloc(100 * sizeof(char*));
     getchar();
     int ind = 0;
     for(int i = 0; i < n; i++){
@@ -513,41 +546,37 @@ int main() {
         // Separa os campos da entrada
         char partes[3][MAX_LINE];
         separa(entrada, partes);
-        Show show;
         if(strcmp(partes[0], "II") == 0){
             show_from_id(&show, partes[1]);
-            inserirInicio(show, lista, &tam);
+            inserirInicio(&lista, show);
         }
         else if(strcmp(partes[0], "I*") == 0){
             show_from_id(&show, partes[2]);
             int pos = atoi(partes[1]);
-            inserir(show, pos, lista, &tam);
+            inserir(show, pos, &lista);
         }
         else if(strcmp(partes[0], "IF") == 0) {
             show_from_id(&show, partes[1]);
-            inserirFim(show, lista, &tam);
+            inserirFim(&lista, show);
         }
         else if(strcmp(partes[0], "RI") == 0){
-            removidos[ind++] = removerInicio(lista, &tam).title;
+            removerInicio(&lista);
         }
         else if(strcmp(partes[0], "R*") == 0){
             int pos = atoi(partes[1]);
-            removidos[ind++] = remover(pos, lista, &tam).title;
+            remover(&lista, pos);
         } 
         else if(strcmp(partes[0], "RF") == 0) {
-            removidos[ind++] = removerFim(lista, &tam).title;
+            removerFim(&lista);
         }
     }
-    // Impressão dos removidos
-    for(int i = 0; i < ind; i++){
-        printf("(R) %s\n", removidos[i]);
+    No *atual = lista.primeiro->prox;
+    while (atual != NULL) {
+        printf("AV\n");
+        imprimir_show(&(atual->show));
+        free_show(&(atual->show));
+        atual = atual->prox;
     }
-    // libera a memoria alocada
-    for (int i = 0; i < tam; i++) {
-        imprimir_show(&lista[i]);
-        free_show(&lista[i]);
-    }
-    free(removidos);
-    removidos = NULL;
+    printf("Teste\n");
     return 0;
 }
