@@ -10,6 +10,8 @@
 
 #define MAX_LINE 1024
 #define MAX_SHOWS 500
+#define MAX_CAMPOS 16
+
 
 typedef struct {
     char *show_ID;
@@ -69,13 +71,13 @@ void free_show(Show* s) {
     if (s->type) free(s->type);
     if (s->show_ID) free(s->show_ID);
     if (s->director) free(s->director);
-    free(s);
 }
 
 
 int converteStr(const char *entrada) {
     int len = strlen(entrada);
     int valor = 0;
+    // Multiplicador responsavel por indicar a casa decimal em cada loop do for
     int multiplicador = 1;
     for (int i = len - 1; i > 0; i--) {
         int numero = entrada[i] - '0';
@@ -91,35 +93,39 @@ int ehFim(const char *entrada) {
 }
 
 void imprimir_show(const Show *s) {
+    // Formata os arrays e o date para string
     char date_str[32];
     if (s->data_added == (time_t)-1) {
         strcpy(date_str, "NaN");
     } else {
         struct tm *tm_ptr = localtime(&s->data_added);
-        // %-d: dia sem padding (sem zero ou espaço à esquerda)
-        strftime(date_str, sizeof(date_str), "%B %-d, %Y", tm_ptr);
+        if (tm_ptr == NULL) {
+            strcpy(date_str, "NaN");
+        } else {
+            strftime(date_str, sizeof(date_str), "%B %-d, %Y", tm_ptr);
+        }
     }
-
-    // Monta a string de "cast" com o formato "[elem1, elem2, ...]"
-    char elenco[1024] = "[";
+    char elenco[1024];
+    strcpy(elenco, "[");
     if (s->cast) {
-        for (int i = 0; s->cast[i] != NULL; i++) {
+        for (int i = 0; i < s->cast_count; i++) {
             strcat(elenco, s->cast[i] ? s->cast[i] : "NaN");
-            if (s->cast[i + 1] != NULL)
+            if (i < s->cast_count - 1)
                 strcat(elenco, ", ");
         }
     }
     strcat(elenco, "]");
-    // Monta a string de "listed_in"
-    char categorias[1024] = "[";
+    char categorias[1024];
+    strcpy(categorias, "[");
     if (s->listed_in) {
-        for (int i = 0; s->listed_in[i] != NULL; i++) {
-            strcat(categorias, s->listed_in[i] ? s->listed_in[i] : "NaN");
-            if (s->listed_in[i + 1] != NULL)
-                strcat(categorias, ", ");
-        }
-    strcat(categorias, "]");
+    for (int i = 0; i < s->listed_count; i++) {
+        strcat(categorias, s->listed_in[i] ? s->listed_in[i] : "NaN");
+        if (i < s->listed_count - 1)
+            strcat(categorias, ", ");
     }
+}
+strcat(categorias, "]");
+
     printf("=> %s ## %s ## %s ## %s ## %s ## %s ## %s ## %d ## %s ## %s ## %s ##\n",
         s->show_ID ? s->show_ID : "NaN",
         s->title ? s->title : "NaN",
@@ -152,11 +158,12 @@ void ordena(char *array[], int tam) {
 }
 
 int separa_e_ordena(char ***destino, char *texto) {
+    // Funçao responsavel por separar e ordenar corretamente campos como cast e listed_in
     int quantidade = 1;
     for (int i = 0; texto[i] != '\0'; i++) {
         if (texto[i] == ',') quantidade++;
     }
-    *destino = malloc(sizeof(char *) * (quantidade + 1));  // +1 pro NULL no final
+    *destino = malloc(sizeof(char *) * (quantidade + 1));
 
     int indice = 0;
     char *token = strtok(texto, ",");
@@ -168,7 +175,7 @@ int separa_e_ordena(char ***destino, char *texto) {
     (*destino)[indice] = NULL;
 
     ordena(*destino, quantidade);
-
+    // Retorna a quantidade de campus separados
     return quantidade;
 }
 
@@ -180,79 +187,67 @@ time_t converter_data(const char *texto) {
     return mktime(&tm_data);
 }
 
-void interpreta(Show *s, char *linha) {
-    char campo_temp[1024];
-    int posicao = 0;
-    int dentro_aspas = 0;
-    int indice_campo = 0;
-    char *campos[20];
-    int i;
+int parse_csv_line(const char *linha, char campos[][MAX_LINE]) {
+    // Função responsavel por separar e converter os campos do csv
+    int campo = 0, pos = 0;
+    bool dentro_aspas = false;
 
-    // Inicializa o array campos;
-    for (i = 0; i < 20; i++) {
-        campos[i] = NULL;
-    }
+    for (int i = 0; linha[i] != '\0'; i++) {
+        char c = linha[i];
 
-    campos[0] = malloc(1024);
-    posicao = 0;
-
-    for (i = 0; linha[i] != '\0'; i++) {
-        char letra = linha[i];
-        if (letra == '"') {
+        if (c == '"') {
             dentro_aspas = !dentro_aspas;
-        } else if (letra == ',' && !dentro_aspas) {
-            campos[indice_campo][posicao] = '\0';
-            indice_campo++;
-            campos[indice_campo] = malloc(1024);
-            posicao = 0;
+        } else if (c == ',' && !dentro_aspas) {
+            campos[campo][pos] = '\0';
+            campo++;
+            pos = 0;
+            if (campo >= MAX_CAMPOS) break; // proteção
         } else {
-            campos[indice_campo][posicao++] = letra;
+            if (pos < MAX_LINE - 1) {
+                campos[campo][pos++] = c;
+            }
         }
     }
-    campos[indice_campo][posicao] = '\0';
+    campos[campo][pos] = '\0'; // finaliza último campo
+    return campo + 1; // total de campos
+}
 
-    // Distribuição dos seus respectivos campos para seus atributos
+static void interpreta(Show *s, char *linha) {
+    char campos[MAX_CAMPOS][MAX_LINE];
+    int num_campos = parse_csv_line(linha, campos);
+    // Parte responsavel por pegar a parte correspondente dos campos para os atributos
     s->show_ID = strdup(campos[0]);
-    s->type = (strcasecmp(campos[1], "movie") == 0) ? strdup("Movie") : strdup("TV Show");
+    s->type = strcasecmp(campos[1], "movie") == 0 ? strdup("Movie") : strdup("TV Show");
     s->title = strdup(campos[2]);
-    s->director = (campos[3][0] == '\0') ? strdup("NaN") : strdup(campos[3]);
-    s->country = (campos[5][0] == '\0') ? strdup("NaN") : strdup(campos[5]);
+    s->director = (*campos[3]) ? strdup(campos[3]) : strdup("NaN");
+    s->country = (*campos[5]) ? strdup(campos[5]) : strdup("NaN");
     s->rating = strdup(campos[8]);
     s->duration = strdup(campos[9]);
-    // Analisa e array de strings, e decide se é vazio ou não, se não for, é preparado e ordenado
-    if (campos[4][0] == '\0') {
-        s->cast = malloc(sizeof(char *) * 2);
-        s->cast[0] = strdup("NaN");
-        s->cast[1] = NULL;
-        s->cast_count = 1;
-    } else {
+
+    if (*campos[4]) 
         s->cast_count = separa_e_ordena(&s->cast, campos[4]);
+    else {
+        s->cast = malloc(sizeof(char*));
+        s->cast[0] = strdup("NaN");
+        s->cast_count = 1;
     }
-    if (campos[10][0] == '\0') {
-        s->listed_in = malloc(sizeof(char *) * 2);
-        s->listed_in[0] = strdup("NaN");
-        s->listed_in[1] = NULL;
-        s->listed_count = 1;
-    } else {
+
+    if (*campos[10]) 
         s->listed_count = separa_e_ordena(&s->listed_in, campos[10]);
+    else {
+        s->listed_in = malloc(sizeof(char*));
+        s->listed_in[0] = strdup("NaN");
+        s->listed_count = 1;
     }
 
-    // Converte o texto de data no tipo data
     s->data_added = converter_data(campos[6]);
-
-    // Trata release_year
-    s->release_year = (campos[7][0] == '\0') ? 0 : atoi(campos[7]);
-
-    // Libera a memória temporária
-    for (i = 0; i <= indice_campo; i++) {
-        free(campos[i]);
-    }
+    s->release_year = (*campos[7]) ? atoi(campos[7]) : 0;
 }
 
 void show_from_id(Show *s, char *entrada) {
     int id = converteStr(entrada);
     // Construtor responsavel por buscar o ID
-    FILE *fp = fopen("./tmp/disneyplus.csv", "r");
+    FILE *fp = fopen("/tmp/disneyplus.csv", "r");
     if (!fp) {
         perror("Erro ao abrir o arquivo");
         exit(1);
@@ -319,6 +314,7 @@ typedef struct {
 } Lista;
 
 void iniciarLista(Lista *lista) {
+    // Inicia a lista com o formato padrão de listas
     lista->primeiro = malloc(sizeof(No));
     lista->ultimo = lista->primeiro;
     lista->primeiro->prox = NULL;
@@ -353,13 +349,11 @@ void inserirInicio(Lista *lista, Show show) {
 }
 
 void inserir(Show show, int pos, Lista *lista) {
+    // Verifica se pos é uma posição valida 
     if (pos < 0 || pos > lista->tam) {
         return;
     }
-    // A posição de inserção pode ser até o tamanho atual da lista (para inserir no final)
-    if (pos < 0 || pos > lista->tam) {
-        return;
-    }
+    // Direciona oque fazer a dependender do pos
     if(pos == 0){
         inserirInicio(lista, show);
     }
@@ -379,26 +373,43 @@ void inserir(Show show, int pos, Lista *lista) {
 }
 
 void removerInicio(Lista *lista) {
-    No *no = lista->primeiro;
-    Show removido = no->show;
+    No *removido = lista->primeiro->prox;
+    if (removido == NULL) return; // lista vazia
 
-    lista->primeiro = no->prox;
-    printf("(R) %s\n", removido.title);
+    printf("(R) %s\n", removido->show.title);
+    // Corrige os ponteiros da fila, se o elemento removido foi o ultimo, a fila é resetada
+    lista->primeiro->prox = removido->prox;
+    if (lista->ultimo == removido) {
+        lista->ultimo = lista->primeiro;
+    }
+
+    free_show(&removido->show);
+    free_show(&removido->show);
+    free(removido);
     lista->tam--;
 }
 
 void removerFim(Lista *lista) {
-    No* i;
-    for(i = lista->primeiro;i->prox != lista->ultimo; i = i->prox);
+    No *anterior = lista->primeiro;
+    No *atual = anterior->prox;
 
-    Show removido = lista->ultimo->show;
-    lista->ultimo = i;
-    lista->ultimo->prox = NULL;
+    if (atual == NULL) return; // lista vazia
+    // Utiliza 2 variaveis para encontrar o penultimo, o atual serve como teste para encontrar o ultimo
+    while (atual->prox != NULL) {
+        anterior = atual;
+        atual = atual->prox;
+    }
+
+    printf("(R) %s\n", atual->show.title);
+    free_show(&atual->show);
+    free(atual);
+    anterior->prox = NULL;
+    lista->ultimo = anterior;
     lista->tam--;
-    printf("(R) %s\n", removido.title);
 }
 
 void remover(Lista *lista, int pos) {
+    // Se o pos, for o inicio ou fim, chama a função propria para isso
     if(pos == 0){
         removerInicio(lista);
     }
@@ -484,12 +495,13 @@ void separa(char entrada[], char partes[][MAX_LINE]){
 }
 
 void liberarLista(Lista *lista) {
+    // FUnção responsavel por liberar os ponteiros da memoria
     No *atual = lista->primeiro;
     while (atual != NULL) {
     No *temp = atual;
-    free_show(&(atual->show)); // Libera o conteúdo do Show
+    free_show(&(atual->show));
     atual = atual->prox;
-    free(temp); // Libera o nó
+    free(temp);
     }
     lista->primeiro = NULL;
     lista->ultimo = NULL;
@@ -511,7 +523,7 @@ int main() {
     // Parte responsavel por ler a primeira parte da entrada
     while(!ehFim(entrada)) {
         show_from_id(&show, entrada);
-        inserirInicio(&lista, show);
+        inserirFim(&lista, show);
         lista.tam++;
         fgets(entrada, MAX_LINE, stdin);
         len = strlen(entrada);
@@ -521,8 +533,7 @@ int main() {
     }
     // Inicio da leitura da 2 parte
     int n;
-    scanf("%d", &n);
-    getchar();
+    scanf("%d\n", &n);
     int ind = 0;
     for(int i = 0; i < n; i++){
         fgets(entrada, MAX_LINE, stdin);
@@ -557,12 +568,12 @@ int main() {
             removerFim(&lista);
         }
     }
-    No *atual = lista.primeiro;
+    // Inicia a impressão pelo primeiro.prox, já que primeiro é o vazio
+    No *atual = lista.primeiro->prox;
     while (atual != NULL) {
-        // IMPORTANTE DEBUGAR FUNÇÂO IMPRIMIR SHOW
         imprimir_show(&(atual->show));
         atual = atual->prox;
     }
-    //liberarLista(&lista);
+    liberarLista(&lista);
     return 0;
 }
