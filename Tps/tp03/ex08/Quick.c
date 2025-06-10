@@ -7,11 +7,12 @@
 #include <stdbool.h>
 #include <time.h>
 #include <locale.h>
+#include <math.h>
 
 #define MAX_LINE 1024
 #define MAX_SHOWS 500
-#define MAX_CAMPOS 16
-
+#define TAM_FILA 5
+#define MAX_CAMPOS 20
 
 typedef struct {
     char *show_ID;
@@ -28,7 +29,6 @@ typedef struct {
     char **listed_in;
     int listed_count;
 } Show;
-
 
 // Inicializa a estrutura com valores padrão 
 void init_show(Show *s) {
@@ -48,36 +48,31 @@ void init_show(Show *s) {
 }
 
 // Libera toda a memória alocada para um objeto Show
-void free_show(Show* s) {
-    if (s == NULL) return;
-    if (s->country) free(s->country);
-    if (s->rating) free(s->rating);
-    if (s->duration) free(s->duration);
-    if (s->cast && s->cast_count > 0) {
-        for (int i = 0; i < s->cast_count; i++) {
-            if (s->cast[i]) {
-                free(s->cast[i]);
-            }
-        }
+void free_show(Show *s) {
+    if(s->show_ID) free(s->show_ID);
+    if(s->type) free(s->type);
+    if(s->title) free(s->title);
+    if(s->director) free(s->director);
+    if(s->country) free(s->country);
+    if(s->rating) free(s->rating);
+    if(s->duration) free(s->duration);
+    if(s->cast) {
+       for (int i = 0; i < s->cast_count; i++) {
+            free(s->cast[i]);
+       }
+       free(s->cast);
     }
-    if (s->listed_in) {
-        for (int i = 0; i < s->listed_count; i++) {
-            if (s->listed_in[i]) {
-                free(s->listed_in[i]);
-            }
-        }
+    if(s->listed_in) {
+       for (int i = 0; i < s->listed_count; i++) {
+            free(s->listed_in[i]);
+       }
+       free(s->listed_in);
     }
-    if (s->title) free(s->title);
-    if (s->type) free(s->type);
-    if (s->show_ID) free(s->show_ID);
-    if (s->director) free(s->director);
 }
-
 
 int converteStr(const char *entrada) {
     int len = strlen(entrada);
     int valor = 0;
-    // Multiplicador responsavel por indicar a casa decimal em cada loop do for
     int multiplicador = 1;
     for (int i = len - 1; i > 0; i--) {
         int numero = entrada[i] - '0';
@@ -105,6 +100,7 @@ void imprimir_show(const Show *s) {
             strftime(date_str, sizeof(date_str), "%B %-d, %Y", tm_ptr);
         }
     }
+
     char elenco[1024];
     strcpy(elenco, "[");
     if (s->cast) {
@@ -115,6 +111,7 @@ void imprimir_show(const Show *s) {
         }
     }
     strcat(elenco, "]");
+
     char categorias[1024];
     strcpy(categorias, "[");
     if (s->listed_in) {
@@ -140,6 +137,7 @@ strcat(categorias, "]");
         categorias);
 }
 
+
 void ordena(char *array[], int tam) {
     // Ordena um array de string em ordem alfabetica
     int trocou;
@@ -158,29 +156,28 @@ void ordena(char *array[], int tam) {
 }
 
 int separa_e_ordena(char ***destino, char *texto) {
-    // Funçao responsavel por separar e ordenar corretamente campos como cast e listed_in
     int quantidade = 1;
+    // Conta quantos elementos existem no texto, separando por vírgula
     for (int i = 0; texto[i] != '\0'; i++) {
         if (texto[i] == ',') quantidade++;
     }
-    *destino = malloc(sizeof(char *) * (quantidade + 1));
+
+    *destino = malloc(sizeof(char *) * quantidade);
 
     int indice = 0;
     char *token = strtok(texto, ",");
     while (token != NULL) {
-        while (*token == ' ') token++;
+        while (*token == ' ') token++;  // Remove espaço no começo
         (*destino)[indice++] = strdup(token);
         token = strtok(NULL, ",");
     }
-    (*destino)[indice] = NULL;
 
     ordena(*destino, quantidade);
-    // Retorna a quantidade de campus separados
     return quantidade;
 }
 
-
 time_t converter_data(const char *texto) {
+    // Converte data em formato padrão para o time
     if (texto == NULL || texto[0] == '\0') return (time_t)-1;
     struct tm tm_data = {0};
     if (strptime(texto, "%B %d, %Y", &tm_data) == NULL) return (time_t)-1;
@@ -300,61 +297,124 @@ Show clone(Show *original){
     return clone;
 }
 
-// FIM DA CLASSE SHOW
-
 typedef struct No{
     Show show;
     struct No *prox;
+    struct No *ant;
 } No;
 
 typedef struct {
-    No* topo;
+    No *primeiro;
+    No *ultimo;
     int tam;
+    int movs;
+    int comps;
 } Lista;
 
 void iniciarLista(Lista *lista) {
-    // Inicializa a pilha
-    lista->topo = NULL;
-    lista->tam = 0;
+    // Inicia a lista com o formato padrão de listas
+    lista->primeiro = malloc(sizeof(No));
+    lista->ultimo = lista->primeiro;
+    lista->primeiro->prox = NULL;
+    lista->tam = lista->movs = lista->comps = 0;
 }
 
 No* newNo(Show* show){
+    // Construtor de No
     No* nova = (No*)malloc(sizeof(No));
     nova->show = *show;
     nova->prox = NULL;
+    nova->ant = NULL;
     return nova;
 }
 
-bool empty(Lista *lista){
-    // Verifica se a pilha esta vazia
-    return lista->topo == NULL;
-}
-
-void inserir(Show show, Lista *lista) {
-    // Insere um novo elemento no topo da pilha
-    No* novoTopo = newNo(&show);
-    novoTopo->prox = lista->topo;
-    lista->topo = novoTopo;
+void inserir(Lista *lista, Show show){
+    // Insere um novo elemento no final da lista
+    No* novo = newNo(&show);
+    novo->ant = lista->ultimo;
+    lista->ultimo->prox = novo;
+    lista->ultimo = novo;
     lista->tam++;
-}
-
-Show remover(Lista *lista) {
-    // Remove o elemento do topo da pilha
-    if (empty(lista)) {
-        fprintf(stderr, "Erro: pilha vazia.\n");
-        exit(1);
-    }
-    Show removido = lista->topo->show;
-    lista->topo = lista->topo->prox;
-    lista->tam--;
-    return removido;
 }
 
 void liberarLista(Lista *lista) {
     // FUnção responsavel por liberar os ponteiros da memoria
-    while (!empty(lista)) {
-        remover(lista);
+    No *atual = lista->primeiro;
+    while (atual != NULL) {
+    No *temp = atual;
+    free_show(&(atual->show));
+    atual = atual->prox;
+    free(temp);
     }
+    lista->primeiro = NULL;
+    lista->ultimo = NULL;
+    lista->tam = 0;
+}
+
+void imprimeLista(Lista *lista){
+    // Itera sobre a lista imprimendo ela, e depois libera os ponteiros da lista
+    No *atual = lista->primeiro->prox;
+    while (atual != NULL) {
+        imprimir_show(&(atual->show));
+        atual = atual->prox;
+    }
+    liberarLista(lista);
+}
+
+int compararDataTitulo(const Show *a, const Show *b) {
+    int resultado;
+    // Faz as comparações entre 2 shows para ver quem é primeiro
+    if (a->data_added < b->data_added){
+        resultado = -1;
+    }
+    else if (a->data_added > b->data_added){
+        resultado = 1;
+    }
+    else{
+        // Se as datas forem iguais, o desempate é feito pelo titulo
+        resultado = strcasecmp(a->title, b->title);
+    }
+    return resultado;
+}
+
+void trocaShows(Show *a, Show *b) {
+    Show temp = *a;
+    *a = *b;
+    *b = temp;
+}
+
+No* particiona(No* esq, No* dir, Lista *lista) {
+    // Escolhe um pivo, para ser mais simplificado, escolhe-se o dir como pivo
+    Show pivo = dir->show;
+    No* i = esq->ant;
+    for (No* j = esq; j != dir; j = j->prox) {
+        lista->comps++;
+        if (compararDataTitulo(&j->show, &pivo) <= 0) {
+            // Avança i apenas quando encontra elemento <= pivô
+            i = (i == NULL) ? esq : i->prox;
+            trocaShows(&i->show, &j->show);
+            lista->movs++;
+        }
+    }
+    i = (i == NULL) ? esq : i->prox;
+    trocaShows(&i->show, &dir->show);
+    lista->movs++;
+    return i;
+}
+
+void quickSort(No *esq, No *dir, Lista *lista) {
+    // Função principal do quickSort
+    // Verifica se esq e dir são validos
+    if (dir != NULL && esq != dir && esq != dir->prox) {
+        No* pivo = particiona(esq, dir, lista);
+        quickSort(esq, pivo->ant, lista);
+        quickSort(pivo->prox, dir, lista);
+    }
+}
+
+void ordenaLista(Lista *lista) {
+    // Chama afunção quickSort passando as celulas esq e dir, para que a recursão funcione
+    quickSort(lista->primeiro->prox, lista->ultimo, lista);
 }
 
 int main() {
@@ -362,6 +422,7 @@ int main() {
     char entrada[MAX_LINE];
     Lista lista;
     iniciarLista(&lista);
+    clock_t inicio = clock();
     Show show;
     // Se a entrada tiver '\n' troca por '\0' que é a representação de fim da string e conseguir comparar corretamente as strings
     fgets(entrada, MAX_LINE, stdin);
@@ -369,53 +430,21 @@ int main() {
         if(len > 0 && entrada[len-1]=='\n'){
             entrada[len-1] = '\0';
         }
-    // Parte responsavel por ler a primeira parte da entrada
     while(!ehFim(entrada)) {
         show_from_id(&show, entrada);
-        inserir(show, &lista);
+        inserir(&lista, show);
         fgets(entrada, MAX_LINE, stdin);
         len = strlen(entrada);
         if(len > 0 && entrada[len-1]=='\n'){
             entrada[len-1] = '\0';
         }
     }
-    // Inicio da leitura da 2 parte
-    int n;
-    scanf("%d\n", &n);
-    int ind = 0;
-    for(int i = 0; i < n; i++){
-        fgets(entrada, MAX_LINE, stdin);
-        len = strlen(entrada);
-        if(len > 0 && entrada[len-1]=='\n'){
-            entrada[len-1] = '\0';
-        }
-        // Condicional responsavel por identificar qual é o comando
-        if(entrada[0] == 'I') {
-            char id[MAX_LINE];
-            int i = 2;
-            int j = 0;
-            // Copia a parte do id na entrada para uma variavel
-            while(entrada[i] != '\0'){
-                id[j] = entrada[i];
-                j++;
-                i++;
-            }
-            id[j] = '\0';
-            show_from_id(&show, id);
-            inserir(show, &lista);
-        }
-        else{
-            Show removido = remover(&lista);
-            printf("(R) %s\n", removido.title);
-        }
-        
-    }
-    // Desempilha a pilha enquanto imprime
-    while (!empty(&lista)) {
-        Show removido = remover(&lista);
-        printf("[%d] ", lista.tam);
-        imprimir_show(&removido);
-    }
-    liberarLista(&lista);
+    ordenaLista(&lista);
+    imprimeLista(&lista);
+    // calculo final do tempo, e impressão de todos os dados para o log
+    clock_t fim = clock();
+    double tempo = ((double) (fim - inicio) / CLOCKS_PER_SEC) * 1000;
+    FILE* log = fopen("matrícula_quicksort2.txt", "w");
+    fprintf(log, "869899\t%d\t%d\t%.4lf", lista.comps, lista.movs, tempo);
     return 0;
 }

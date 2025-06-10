@@ -7,11 +7,12 @@
 #include <stdbool.h>
 #include <time.h>
 #include <locale.h>
+#include <math.h>
 
 #define MAX_LINE 1024
 #define MAX_SHOWS 500
-#define MAX_CAMPOS 16
-
+#define TAM_FILA 5
+#define MAX_CAMPOS 20
 
 typedef struct {
     char *show_ID;
@@ -28,7 +29,6 @@ typedef struct {
     char **listed_in;
     int listed_count;
 } Show;
-
 
 // Inicializa a estrutura com valores padrão 
 void init_show(Show *s) {
@@ -48,36 +48,31 @@ void init_show(Show *s) {
 }
 
 // Libera toda a memória alocada para um objeto Show
-void free_show(Show* s) {
-    if (s == NULL) return;
-    if (s->country) free(s->country);
-    if (s->rating) free(s->rating);
-    if (s->duration) free(s->duration);
-    if (s->cast && s->cast_count > 0) {
-        for (int i = 0; i < s->cast_count; i++) {
-            if (s->cast[i]) {
-                free(s->cast[i]);
-            }
-        }
+void free_show(Show *s) {
+    if(s->show_ID) free(s->show_ID);
+    if(s->type) free(s->type);
+    if(s->title) free(s->title);
+    if(s->director) free(s->director);
+    if(s->country) free(s->country);
+    if(s->rating) free(s->rating);
+    if(s->duration) free(s->duration);
+    if(s->cast) {
+       for (int i = 0; i < s->cast_count; i++) {
+            free(s->cast[i]);
+       }
+       free(s->cast);
     }
-    if (s->listed_in) {
-        for (int i = 0; i < s->listed_count; i++) {
-            if (s->listed_in[i]) {
-                free(s->listed_in[i]);
-            }
-        }
+    if(s->listed_in) {
+       for (int i = 0; i < s->listed_count; i++) {
+            free(s->listed_in[i]);
+       }
+       free(s->listed_in);
     }
-    if (s->title) free(s->title);
-    if (s->type) free(s->type);
-    if (s->show_ID) free(s->show_ID);
-    if (s->director) free(s->director);
 }
-
 
 int converteStr(const char *entrada) {
     int len = strlen(entrada);
     int valor = 0;
-    // Multiplicador responsavel por indicar a casa decimal em cada loop do for
     int multiplicador = 1;
     for (int i = len - 1; i > 0; i--) {
         int numero = entrada[i] - '0';
@@ -105,6 +100,7 @@ void imprimir_show(const Show *s) {
             strftime(date_str, sizeof(date_str), "%B %-d, %Y", tm_ptr);
         }
     }
+
     char elenco[1024];
     strcpy(elenco, "[");
     if (s->cast) {
@@ -115,6 +111,7 @@ void imprimir_show(const Show *s) {
         }
     }
     strcat(elenco, "]");
+
     char categorias[1024];
     strcpy(categorias, "[");
     if (s->listed_in) {
@@ -140,6 +137,7 @@ strcat(categorias, "]");
         categorias);
 }
 
+
 void ordena(char *array[], int tam) {
     // Ordena um array de string em ordem alfabetica
     int trocou;
@@ -158,29 +156,28 @@ void ordena(char *array[], int tam) {
 }
 
 int separa_e_ordena(char ***destino, char *texto) {
-    // Funçao responsavel por separar e ordenar corretamente campos como cast e listed_in
     int quantidade = 1;
+    // Conta quantos elementos existem no texto, separando por vírgula
     for (int i = 0; texto[i] != '\0'; i++) {
         if (texto[i] == ',') quantidade++;
     }
-    *destino = malloc(sizeof(char *) * (quantidade + 1));
+
+    *destino = malloc(sizeof(char *) * quantidade);
 
     int indice = 0;
     char *token = strtok(texto, ",");
     while (token != NULL) {
-        while (*token == ' ') token++;
+        while (*token == ' ') token++;  // Remove espaço no começo
         (*destino)[indice++] = strdup(token);
         token = strtok(NULL, ",");
     }
-    (*destino)[indice] = NULL;
 
     ordena(*destino, quantidade);
-    // Retorna a quantidade de campus separados
     return quantidade;
 }
 
-
 time_t converter_data(const char *texto) {
+    // Converte data em formato padrão para o time
     if (texto == NULL || texto[0] == '\0') return (time_t)-1;
     struct tm tm_data = {0};
     if (strptime(texto, "%B %d, %Y", &tm_data) == NULL) return (time_t)-1;
@@ -300,219 +297,106 @@ Show clone(Show *original){
     return clone;
 }
 
-// FIM DA CLASSE SHOW
-
 typedef struct No{
     Show show;
     struct No *prox;
 } No;
 
 typedef struct {
-    No *primeiro;
-    No *ultimo;
+    No *p;
+    No *u;
     int tam;
-} Lista;
+} FilaCircular;
 
-void iniciarLista(Lista *lista) {
+bool filaCheia(FilaCircular *fila){
+    // Função responsavel por comparar para ver se a fila esta cheia
+    return (fila->tam == TAM_FILA);
+}
+
+bool filaVazia(FilaCircular *fila){
+    return (fila->tam == 0);
+}
+
+void iniciarLista(FilaCircular *lista) {
     // Inicia a lista com o formato padrão de listas
-    lista->primeiro = malloc(sizeof(No));
-    lista->ultimo = lista->primeiro;
-    lista->primeiro->prox = NULL;
+    lista->u = NULL;
+    lista->p = NULL;
     lista->tam = 0;
 }
 
 No* newNo(Show* show){
+    // Construtor de No
     No* nova = (No*)malloc(sizeof(No));
     nova->show = *show;
     nova->prox = NULL;
     return nova;
 }
 
-void inserirFim(Lista *lista, Show show){
-    lista->ultimo->prox = newNo(&show);
-    lista->ultimo = lista->ultimo->prox;
-    lista->tam++;
-}
-
-
-void inserirInicio(Lista *lista, Show show) {
-    // Abre espaço no array para ser colocado um elemento no inicio
-    No* tmp = newNo(&show);
-    tmp->prox = lista->primeiro->prox;
-    lista->primeiro->prox = tmp;
-
-    if(lista->primeiro == lista->ultimo) {
-        lista->ultimo = tmp;
+Show remover(FilaCircular *fila){
+    // remove o primeiro elemento da fila
+   if (filaVazia(fila)) {
+        fprintf(stderr, "Erro: fila vazia.\n");
+        exit(1);
     }
-    tmp = NULL;
-    lista->tam++;
+    No *rem = fila->p;
+    Show removido = rem->show;
+    fila->p = rem->prox;
+    // Fila ficou vazia
+    if (fila->p == NULL) fila->u = NULL;
+    // Libera o ponteiro de rem, já que não sera mais utilizado
+    free(rem);
+    fila->tam--;
+    return removido;
 }
 
-void inserir(Show show, int pos, Lista *lista) {
-    // Verifica se pos é uma posição valida 
-    if (pos < 0 || pos > lista->tam) {
+void inserir(FilaCircular *fila, Show show){
+    // Insere o novo show no final da fila, e se estiver cheia(com 5 elementos), remove 1
+    if(filaCheia(fila)){
+        remover(fila);
+    }
+    No* novo = newNo(&show);
+    // Verificação necessária para garantir a formatação correta da lista
+    if (filaVazia(fila)) {
+        fila->p = fila->u = novo;
+    } else {
+        fila->u->prox = novo;
+        fila->u = novo;
+    }
+    fila->tam++;
+}
+
+void imprimirFila(FilaCircular *fila) {
+    // Função responsavel por imprimir o shows da fila, imprimir a posição do show
+    No* atual = fila->p;
+    int i = 0;
+    while(atual != NULL){
+        printf("[%d] ", i);
+        imprimir_show(&atual->show);
+        atual = atual->prox;
+        i++;
+    }
+}
+
+void calcularMedia(FilaCircular *fila){
+    if (fila->tam == 0) {
+        printf("[Media] 0\n");
         return;
     }
-    // Direciona oque fazer a dependender do pos
-    if(pos == 0){
-        inserirInicio(lista, show);
-    }
-    else if(pos == lista->tam){
-        inserirFim(lista, show);
-    }
-    else{
-        int j;
-        No* i = lista->primeiro;
-        for(j = 0;j<pos;j++, i = i->prox);
-        No* tmp = newNo(&show);
-        tmp->prox = i->prox;
-        i->prox = tmp;
-        tmp = i = NULL;
-        lista->tam++;
-    }
-}
-
-void removerInicio(Lista *lista) {
-    No *removido = lista->primeiro->prox;
-    if (removido == NULL) return; // lista vazia
-
-    printf("(R) %s\n", removido->show.title);
-    // Corrige os ponteiros da fila, se o elemento removido foi o ultimo, a fila é resetada
-    lista->primeiro->prox = removido->prox;
-    if (lista->ultimo == removido) {
-        lista->ultimo = lista->primeiro;
-    }
-
-    free_show(&removido->show);
-    free_show(&removido->show);
-    free(removido);
-    lista->tam--;
-}
-
-void removerFim(Lista *lista) {
-    No *anterior = lista->primeiro;
-    No *atual = anterior->prox;
-
-    if (atual == NULL) return; // lista vazia
-    // Utiliza 2 variaveis para encontrar o penultimo, o atual serve como teste para encontrar o ultimo
-    while (atual->prox != NULL) {
-        anterior = atual;
+    int soma = 0;
+    // Loop começa com o primeiro No, e vai avançando enquanto soma o release_year
+    No* atual = fila->p;
+    while(atual != NULL){
+        soma += atual->show.release_year;
         atual = atual->prox;
     }
-
-    printf("(R) %s\n", atual->show.title);
-    free_show(&atual->show);
-    free(atual);
-    anterior->prox = NULL;
-    lista->ultimo = anterior;
-    lista->tam--;
-}
-
-void remover(Lista *lista, int pos) {
-    // Se o pos, for o inicio ou fim, chama a função propria para isso
-    if(pos == 0){
-        removerInicio(lista);
-    }
-    else if(pos == lista->tam - 1){
-        removerFim(lista);
-    }
-    else{
-        No* i = lista->primeiro;
-        int j;
-        for(j = 0;j<pos;j++, i = i->prox);
-
-        No* tmp = i->prox;
-        Show removido = tmp->show;
-        i->prox = tmp->prox;
-        free(tmp);
-        printf("(R) %s\n", removido.title);
-        lista->tam--;
-    }
-}
-
-bool ehInsere(char *comando){
-    return (strcmp(comando, "II") == 0 || strcmp(comando, "IF") == 0);
-}
-
-
-bool ehRemovePos(char *comando) {
-    return (strcmp(comando, "R*") == 0);
-}
-
-void separa(char entrada[], char partes[][MAX_LINE]){
-    // Função responsavel por separar cada campo da entrada, em uma string
-    int i = 0, j = 0;
-    int parte = 0;
-    while(entrada[i] != ' '){
-        // Primeiro le o comando, e a depender dele, decide qual tipo de tratamento sera feito
-        partes[parte][j] = entrada[i];
-        i++;
-        j++; 
-    }
-    // Inserção do '\0' que demarca o fim da string
-    partes[parte][j] = '\0';
-    parte++;
-    i++;
-    // Verifica se o comando é 'IF' ou 'II', pois so tem 2 campos, comando/id
-    if(ehInsere(partes[0])){
-        int j = 0;
-        while(entrada[i] != '\0'){
-            partes[parte][j] = entrada[i];
-            j++;
-            i++;
-        }
-        partes[parte][j] = '\0';
-    }
-    // Verifica se o comando é 'I*', pois possui 3 campos, comando/posição/id
-    else if(strcmp(partes[0], "I*") == 0){
-        int j = 0;
-        while(entrada[i] != ' '){
-            partes[parte][j] = entrada[i];
-            i++;
-            j++;
-        }
-        partes[parte][j] = '\0';
-        i++;
-        parte++;
-        j = 0;
-        while(entrada[i] != '\0'){
-            partes[parte][j] = entrada[i];
-            i++;
-            j++;
-        }
-        partes[parte][j] = '\0';
-    }
-    else if(ehRemovePos(partes[0])){
-        // Verifica se é 'R*' pois possui 2 campos, comando/posição
-        int j = 0;
-        while(entrada[i] != '\0'){
-            partes[parte][j] = entrada[i];
-            i++;
-            j++;
-        }
-        partes[parte][j] = '\0';
-    }
-}
-
-void liberarLista(Lista *lista) {
-    // FUnção responsavel por liberar os ponteiros da memoria
-    No *atual = lista->primeiro;
-    while (atual != NULL) {
-    No *temp = atual;
-    free_show(&(atual->show));
-    atual = atual->prox;
-    free(temp);
-    }
-    lista->primeiro = NULL;
-    lista->ultimo = NULL;
-    lista->tam = 0;
+    int media = soma/ fila->tam;
+    printf("[Media] %d\n",media);
 }
 
 int main() {
-    setlocale(LC_TIME, "C");
     char entrada[MAX_LINE];
-    Lista lista;
-    iniciarLista(&lista);
+    FilaCircular fila;
+    iniciarLista(&fila);
     Show show;
     // Se a entrada tiver '\n' troca por '\0' que é a representação de fim da string e conseguir comparar corretamente as strings
     fgets(entrada, MAX_LINE, stdin);
@@ -523,8 +407,9 @@ int main() {
     // Parte responsavel por ler a primeira parte da entrada
     while(!ehFim(entrada)) {
         show_from_id(&show, entrada);
-        inserirFim(&lista, show);
-        lista.tam++;
+        inserir(&fila, clone(&show));
+        free_show(&show);
+        calcularMedia(&fila);
         fgets(entrada, MAX_LINE, stdin);
         len = strlen(entrada);
         if(len > 0 && entrada[len-1]=='\n'){
@@ -533,7 +418,8 @@ int main() {
     }
     // Inicio da leitura da 2 parte
     int n;
-    scanf("%d\n", &n);
+    scanf("%d", &n);
+    getchar();
     int ind = 0;
     for(int i = 0; i < n; i++){
         fgets(entrada, MAX_LINE, stdin);
@@ -541,39 +427,29 @@ int main() {
         if(len > 0 && entrada[len-1]=='\n'){
             entrada[len-1] = '\0';
         }
-        // Separa os campos da entrada
-        char partes[3][MAX_LINE];
-        separa(entrada, partes);
-        if(strcmp(partes[0], "II") == 0){
-            show_from_id(&show, partes[1]);
-            inserirInicio(&lista, show);
+        // Condicional responsavel por identificar qual é o comando
+        if(entrada[0] == 'I') {
+            char id[MAX_LINE];
+            int i = 2;
+            int j = 0;
+            // Copia a parte do id na entrada para uma variavel
+            while(entrada[i] != '\0'){
+                id[j] = entrada[i];
+                j++;
+                i++;
+            }
+            id[j] = '\0';
+            show_from_id(&show, id);
+            inserir(&fila, show);
+            // Imprime a media da fila com o novo elemento
+            calcularMedia(&fila);
         }
-        else if(strcmp(partes[0], "I*") == 0){
-            show_from_id(&show, partes[2]);
-            int pos = atoi(partes[1]);
-            inserir(show, pos, &lista);
-        }
-        else if(strcmp(partes[0], "IF") == 0) {
-            show_from_id(&show, partes[1]);
-            inserirFim(&lista, show);
-        }
-        else if(strcmp(partes[0], "RI") == 0){
-            removerInicio(&lista);
-        }
-        else if(strcmp(partes[0], "R*") == 0){
-            int pos = atoi(partes[1]);
-            remover(&lista, pos);
-        } 
-        else if(strcmp(partes[0], "RF") == 0) {
-            removerFim(&lista);
+        else{
+            Show removido = remover(&fila);
+            printf("(R) %s\n", removido.title);
         }
     }
-    // Inicia a impressão pelo primeiro.prox, já que primeiro é o vazio
-    No *atual = lista.primeiro->prox;
-    while (atual != NULL) {
-        imprimir_show(&(atual->show));
-        atual = atual->prox;
-    }
-    liberarLista(&lista);
+    // libera a memoria alocada e impressão da pilha ao desempilhar
+    imprimirFila(&fila);
     return 0;
 }
