@@ -347,17 +347,15 @@ class Arvore {
         if (atual != nil) {
             qtComps++;
             // Navega pelos Nos considerando o case
-            int comp = nome.compareTo(atual.getShow().getTitle());
+            int comp = nome.compareToIgnoreCase(atual.getShow().getTitle());
             if (comp < 0) {
                 System.out.printf(" esq");
                 encontrado = pesquisar(atual.getEsq(), nome);
             } else if (comp > 0) {
-                qtComps++;
                 System.out.printf(" dir");
                 encontrado = pesquisar(atual.getDir(), nome);
             } else {
-                qtComps++;
-                encontrado = true;  
+                encontrado = true;
             }
         }
         return encontrado;
@@ -367,38 +365,51 @@ class Arvore {
         No novo = new No(show, nil);
         No pai = nil;
         No i = this.raiz;
+
+        // Procura a posição correta para o novo nó
         while (i != nil) {
             pai = i;
-            int comp = novo.getShow().getTitle().compareTo(i.getShow().getTitle());
+            int comp = novo.getShow().getTitle().compareToIgnoreCase(i.getShow().getTitle());
             if (comp < 0) {
                 i = i.getEsq();
             } else if (comp > 0) {
                 i = i.getDir();
             } else {
+                // Se o show já existe, não insere e retorna
                 return;
             }
         }
+
+        // Define o pai do novo nó
         novo.setPai(pai);
+
+        // Insere o novo nó na árvore
         if (pai == nil) {
             this.raiz = novo;
         } else {
-            int cmp = novo.getShow().getTitle().compareTo(pai.getShow().getTitle());
+            int cmp = novo.getShow().getTitle().compareToIgnoreCase(pai.getShow().getTitle());
             if (cmp < 0) {
                 pai.setEsq(novo);
             } else {
                 pai.setDir(novo);
             }
         }
+        novo.setCor(true);
+        // Realiza a revisão da inserção para manter as propriedades da Árvore
+        // Vermelho-Preta
         revisaInsercao(novo);
     }
 
     private void rodaDir(No no) {
         No noEsq = no.getEsq();
         no.setEsq(noEsq.getDir());
+
         if (noEsq.getDir() != nil) {
             noEsq.getDir().setPai(no);
         }
+
         noEsq.setPai(no.getPai());
+
         if (no.getPai() == nil) {
             this.raiz = noEsq;
         } else if (no == no.getPai().getEsq()) {
@@ -406,18 +417,21 @@ class Arvore {
         } else {
             no.getPai().setDir(noEsq);
         }
+
         noEsq.setDir(no);
         no.setPai(noEsq);
     }
 
     private void rodaEsq(No no) {
-        // Função responsavel por fazer a rotação para a esquerda
         No noDir = no.getDir();
         no.setDir(noDir.getEsq());
+
         if (noDir.getEsq() != nil) {
             noDir.getEsq().setPai(no);
         }
+
         noDir.setPai(no.getPai());
+
         if (no.getPai() == nil) {
             this.raiz = noDir;
         } else if (no == no.getPai().getEsq()) {
@@ -425,61 +439,59 @@ class Arvore {
         } else {
             no.getPai().setDir(noDir);
         }
+
         noDir.setEsq(no);
         no.setPai(noDir);
     }
 
     private void revisaInsercao(No atual) {
-        while (atual.getPai().getCor() == true) {
-
-            // Se o pai é filho esquerdo do avo
+        // Continua enquanto o pai existir e for vermelho
+        while (atual != this.raiz && atual.getPai().getCor() == true) {
+            // Verifica se o pai é filho esquerdo do avô
             if (atual.getPai() == atual.getPai().getPai().getEsq()) {
                 No tio = atual.getPai().getPai().getDir();
 
-                // Tio é vermelho
+                // Caso 1: Tio é vermelho
                 if (tio.getCor() == true) {
-                    atual.getPai().setCor(false);
-                    tio.setCor(false);
-                    atual.getPai().getPai().setCor(true);
-                    atual = atual.getPai().getPai();
+                    atual.getPai().setCor(false); // Pai fica preto
+                    tio.setCor(false); // Tio fica preto
+                    atual.getPai().getPai().setCor(true); // Avô fica vermelho
+                    atual = atual.getPai().getPai(); // Move para o avô
                 } else {
-                    // Tio é preto e atual é filho direito
+                    // Caso 2: atual é filho direito (zig-zag)
                     if (atual == atual.getPai().getDir()) {
                         atual = atual.getPai();
                         rodaEsq(atual);
                     }
-
-                    // Tio é preto e atual é filho esquerdo
-                    atual.getPai().setCor(false);
-                    atual.getPai().getPai().setCor(true);
-                    rodaDir(atual.getPai().getPai());
+                    // Caso 3: atual é filho esquerdo (zig-zig)
+                    atual.getPai().setCor(false); // Pai fica preto
+                    atual.getPai().getPai().setCor(true); // Avô fica vermelho
+                    rodaDir(atual.getPai().getPai()); // Rotação à direita no avô
                 }
-            }
-            // Se o pai é o filho direito
-            else {
+            } else {
+                // Pai é filho direito do avô
                 No tio = atual.getPai().getPai().getEsq();
 
-                // Tio é vermelho
+                // Caso 1: Tio é vermelho
                 if (tio.getCor() == true) {
-                    atual.getPai().setCor(false);
-                    tio.setCor(false);
-                    atual.getPai().getPai().setCor(true);
-                    atual = atual.getPai().getPai();
+                    atual.getPai().setCor(false); // Pai fica preto
+                    tio.setCor(false); // Tio fica preto
+                    atual.getPai().getPai().setCor(true); // Avô fica vermelho
+                    atual = atual.getPai().getPai(); // Move para o avô
                 } else {
-                    // Tio é preto e atual é filho esquerdo
+                    // Caso 2: atual é filho esquerdo (zig-zag)
                     if (atual == atual.getPai().getEsq()) {
                         atual = atual.getPai();
                         rodaDir(atual);
                     }
-
-                    // Tio é preto e atual é filho direito
-                    atual.getPai().setCor(false);
-                    atual.getPai().getPai().setCor(true);
-                    rodaEsq(atual.getPai().getPai());
+                    // Caso 3: atual é filho direito (zig-zig)
+                    atual.getPai().setCor(false); // Pai fica preto
+                    atual.getPai().getPai().setCor(true); // Avô fica vermelho
+                    rodaEsq(atual.getPai().getPai()); // Rotação à esquerda no avô
                 }
             }
         }
-        // Garante que a raiz sempre seja preta
+        // Garante que a raiz seja sempre preta
         this.raiz.setCor(false);
     }
 }

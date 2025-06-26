@@ -60,10 +60,6 @@ class Show {
         this.listed_in = listed_in.clone();
     }
 
-    public void setRelease(int year) {
-        this.release_year = year;
-    }
-
     public String getType() {
         return this.type;
     }
@@ -104,7 +100,11 @@ class Show {
         return show_ID;
     }
 
-    private static final SimpleDateFormat dateFormat = new SimpleDateFormat("MMMM d, yyyy", Locale.ENGLISH);
+    public int getRelease_year() {
+        return release_year;
+    }
+
+    private static final SimpleDateFormat dateFormat = new SimpleDateFormat("MMMM d,yyyy", Locale.ENGLISH);
 
     public Show() {
         show_ID = "NaN";
@@ -236,7 +236,7 @@ class Show {
 
     public void imprimir() {
         // antes de começar a impressão, ordena os vetores que precisam ser ordenados
-        SimpleDateFormat date = new SimpleDateFormat("MMMM d, yyyy", Locale.ENGLISH);
+        SimpleDateFormat date = new SimpleDateFormat("MMMM d,yyyy", Locale.ENGLISH);
         String dateFormatada;
         if (getDate_added() != null) {
             dateFormatada = date.format(getDate_added());
@@ -291,18 +291,73 @@ class NoZ{
     }
 }
 
+class ArvoreZ {
+    private NoZ raiz;
+    private int qtComps;
+
+    public ArvoreZ(){
+        raiz = null;
+        qtComps = 0;
+    }
+
+    public void inserir(Show show){
+        this.raiz = inserir(raiz, show);
+    }
+
+    private NoZ inserir(NoZ atual, Show show){
+        if(atual == null){
+            return new NoZ(show);
+        }
+        if(show.getTitle().compareTo(atual.getChave()) < 0){
+            atual.setEsq(inserir(atual.getEsq(), show));
+        }
+        else if(show.getTitle().compareTo(atual.getChave()) > 0){
+            atual.setDir(inserir(atual.getDir(), show));
+        }
+        return atual;
+    }
+
+    public boolean pesquisar(String title){
+        qtComps = 0;
+        return pesquisar(raiz, title);
+    }
+
+    private boolean pesquisar(NoZ atual, String title){
+        Boolean encontrado = false;
+        if(atual != null){
+            qtComps++;
+            int cmp = title.compareTo(atual.getChave());
+            if(cmp < 0){
+                System.out.printf(" esq"); // Minúsculas e um espaço
+                encontrado = pesquisar(atual.getEsq(), title);
+            }
+            else if(cmp > 0){
+                System.out.printf(" dir"); // Minúsculas e um espaço
+                encontrado = pesquisar(atual.getDir(), title);
+            }
+            else{
+                encontrado = true;
+            }
+        }
+        return encontrado;
+    }
+
+    public int getQtComps() {
+        return qtComps;
+    }
+}
+
 class NoXY {
-    // Classe responsal pelos nos da arvore binaria
     private int chave;
     private NoXY esq;
     private NoXY dir;
-    private ArvoreZ arvore;
+    private ArvoreZ arvoreZ;
 
     public NoXY(int valor){
         this.chave = valor;
         this.esq = null;
         this.dir = null;
-        arvore = new ArvoreZ();
+        arvoreZ = new ArvoreZ();
     }
 
     public NoXY getDir() {
@@ -313,8 +368,8 @@ class NoXY {
         return esq;
     }
 
-    public ArvoreZ getArvore() {
-        return arvore;
+    public ArvoreZ getArvoreZ() {
+        return arvoreZ;
     }
 
     public void setDir(NoXY dir) {
@@ -333,108 +388,106 @@ class NoXY {
         this.chave = chave;
     }
 
-    public void setArvore(ArvoreZ arvore) {
-        this.arvore = arvore;
-    }
-}
-
-class ArvoreZ {
-    private NoZ raiz;
-    private int qtComps;
-
-    public ArvoreZ(){
-        raiz = null;
-        qtComps = 0;
-    }
-
-    public void inserir(Show show){
-        this.raiz = inserir(raiz, show);
-    }
-
-    private NoZ inserir(NoZ atual, Show show){
-        if(atual == null){
-            return new NoZ(show);
-        }
-        // Se encontrar um NO vazio, insere o novo no
-        // Procura um no vazio a depender da ordem alfabetica
-        if(show.getTitle().compareTo(atual.getChave()) < 0){
-            atual.setEsq(inserir(atual.getEsq(), show));
-        }
-        else if(show.getTitle().compareTo(atual.getChave()) > 0){
-            atual.setDir(inserir(atual.getDir(), show));
-        }
-        return atual;
-    }
-
-    public boolean pesquisar(String title){
-        return pesquisar(raiz, title);
-    }
-
-    private boolean pesquisar(NoZ atual, String title){
-        Boolean encontrado = false;
-        if(atual != null){
-            qtComps++;
-            // Navega pelos Nos considerando o case
-            if(title.compareTo(atual.getChave()) < 0){
-                System.out.printf(" esq");
-                encontrado = pesquisar(atual.getEsq(), title);
-            }
-            else if(title.compareTo(atual.getChave()) > 0){
-                qtComps++;
-                System.out.printf(" dir");
-                encontrado = pesquisar(atual.getDir(), title);
-            }
-            else{
-                qtComps++;
-                encontrado = true;
-            }
-        }
-        return encontrado;
+    public void setArvoreZ(ArvoreZ arvoreZ) {
+        this.arvoreZ = arvoreZ;
     }
 }
 
 class ArvoreXY {
-    // Classe de arvore, com os metodos padrões e adaptados de arvores binarias
     private NoXY raiz;
-    private int qtComps;
+    private int totalComps;
 
     public ArvoreXY(){
-        inserir(7);
+        this.totalComps = 0;
+        inserirNoInicial(7);
+        inserirNoInicial(3);
+        inserirNoInicial(11);
+        inserirNoInicial(1);
+        inserirNoInicial(5);
+        inserirNoInicial(9);
+        inserirNoInicial(13);
+        inserirNoInicial(0);
+        inserirNoInicial(2);
+        inserirNoInicial(4);
+        inserirNoInicial(6);
+        inserirNoInicial(8);
+        inserirNoInicial(10);
+        inserirNoInicial(12);
+        inserirNoInicial(14);
     }
 
-    public int getComps() {
-        return qtComps;
+    private void inserirNoInicial(int valor){
+        this.raiz = inserirNoInicial(raiz, valor);
     }
 
-    public void inserir(int valor){
-        this.raiz = inserir(raiz, valor);
-    }
-
-    private NoXY inserir(NoXY atual, int valor){
+    private NoXY inserirNoInicial(NoXY atual, int valor){
         if(atual == null){
             return new NoXY(valor);
         }
-        // Se encontrar um NO vazio, insere o novo no
-        // Procura um no vazio a depender da ordem alfabetica
         if(valor < atual.getChave()){
-            atual.setEsq(inserir(atual.getEsq(), valor));
+            atual.setEsq(inserirNoInicial(atual.getEsq(), valor));
         }
         else if(valor > atual.getChave()){
-            atual.setDir(inserir(atual.getDir(), valor));
+            atual.setDir(inserirNoInicial(atual.getDir(), valor));
         }
         return atual;
     }
 
-    public boolean pesquisar(String nome){
-        // Chama a função recursiva para navegar na arvore, e começa a imprimir o caminho
-        System.out.printf("=>raiz ");
-        return pesquisar(raiz, nome);
+    public int getComps() {
+        return totalComps;
     }
 
-    private boolean pesquisar(NoXY atual, String nome){
-        Boolean encontrado = false;
-        if(atual != null){
-            if(atual.)
+    public void inserirShow(Show show){
+        int chaveXY = show.getRelease_year() % 15; 
+        inserirShow(raiz, show, chaveXY);
+    }
+
+    private void inserirShow(NoXY atual, Show show, int chaveXY){
+        if(atual == null){
+            return;
+        }
+
+        if(chaveXY < atual.getChave()){
+            inserirShow(atual.getEsq(), show, chaveXY);
+        }
+        else if(chaveXY > atual.getChave()){
+            inserirShow(atual.getDir(), show, chaveXY);
+        }
+        else { // Chave XY encontrada, insere na ArvoreZ associada
+            atual.getArvoreZ().inserir(show);
+        }
+    }
+
+    public boolean pesquisar(String title){
+        System.out.printf("raiz");
+        totalComps = 0;
+        return pesquisarRecursivo(raiz, title);
+    }
+
+    private boolean pesquisarRecursivo(NoXY atual, String title){
+        boolean encontrado = false;
+
+        if (atual != null) {
+            totalComps++;
+
+            // Primeiro, tenta pesquisar na ArvoreZ do nó atual
+            boolean foundInCurrentZ = atual.getArvoreZ().pesquisar(title);// Faremos o "mostrar" na segunda porque ela é organizada pelo atributo title. [cite: 42]
+            totalComps += atual.getArvoreZ().getQtComps();
+
+            if (foundInCurrentZ) {
+                return true;
+            }
+
+            // Se não encontrou na ArvoreZ atual, continua o percurso na ArvoreXY
+        
+            if (atual.getEsq() != null) {
+                System.out.printf("  ESQ"); 
+                encontrado = pesquisarRecursivo(atual.getEsq(), title);
+            }
+            if (!encontrado && atual.getDir() != null) {
+                System.out.printf("  DIR"); 
+                encontrado = pesquisarRecursivo(atual.getDir(), title);
+            }
         }
         return encontrado;
     }
@@ -458,19 +511,19 @@ public class Principal {
         // Registra o inicio do processamento do sistema
         long inicio = System.nanoTime();
         String entrada = ler.nextLine();
-        ArvoreXY arvore = new ArvoreXY();
+        ArvoreXY arvore = new ArvoreXY(); 
         while(!ehFim(entrada)){
             Show show = new Show(entrada);
-            arvore.inserir(show);
+            arvore.inserirShow(show);
             entrada = ler.nextLine();
         }
         entrada = ler.nextLine();
         while(!ehFim(entrada)){
             if(arvore.pesquisar(entrada)){
-                System.out.println(" SIM");
+                System.out.println("  SIM"); // Dois espaços antes de SIM/NAO
             }
             else{
-                System.out.println(" NAO");
+                System.out.println("  NAO"); // Dois espaços antes de SIM/NAO
             }
             entrada = ler.nextLine();
         }
@@ -479,7 +532,9 @@ public class Principal {
         long fim = System.nanoTime();
         double tempoExec = (fim - inicio) / 1e6;
         try{
-            FileWriter arq = new FileWriter("869899_sequencial.txt");
+            // O nome do arquivo de log será matrícula_arvoreArvore.txt. 
+            FileWriter arq = new FileWriter("869899_arvoreArvore.txt");
+            // Todas as informações do arquivo de log devem ser separadas por uma tabulação '\t'. [cite: 32]
             arq.write("869899" + '\t' + tempoExec + '\t' + arvore.getComps());
             arq.close();
         }
