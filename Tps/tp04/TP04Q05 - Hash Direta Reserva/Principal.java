@@ -249,227 +249,112 @@ class Show {
     }
 }
 
-class NoZ{
-    private String chave;
-    private NoZ esq;
-    private NoZ dir;
+class Tabela {
+    private Show tabela[];
+    // Variaveis que expressão cada porção e tamanho da tabela
+    private final int tamTab = 21;
+    private final int tamRes = 9;
+    private final int totalTam = tamRes + tamTab;
+    private int comps;
 
-    public NoZ(String title){
-        this.chave = title;
-        this.esq = null;
-        this.dir = null;
-    }
-
-    public NoZ(Show show){
-        this.chave = show.getTitle();
-        this.esq = null;
-        this.dir = null;
-    }
-
-    public String getChave() {
-        return chave;
-    }
-
-    public NoZ getDir() {
-        return dir;
-    }
-
-    public NoZ getEsq() {
-        return esq;
-    }
-
-    public void setChave(String chave) {
-        this.chave = chave;
-    }
-
-    public void setDir(NoZ dir) {
-        this.dir = dir;
-    }
-
-    public void setEsq(NoZ esq) {
-        this.esq = esq;
-    }
-}
-
-class NoXY {
-    // Classe responsal pelos nos da arvore binaria
-    private int chave;
-    private NoXY esq;
-    private NoXY dir;
-    private ArvoreZ arvore;
-
-    public NoXY(int valor){
-        this.chave = valor;
-        this.esq = null;
-        this.dir = null;
-        arvore = new ArvoreZ();
-    }
-
-    public NoXY getDir() {
-        return dir;
-    }
-
-    public NoXY getEsq() {
-        return esq;
-    }
-
-    public ArvoreZ getArvore() {
-        return arvore;
-    }
-
-    public void setDir(NoXY dir) {
-        this.dir = dir;
-    }
-
-    public void setEsq(NoXY esq) {
-        this.esq = esq;
-    }
-
-    public int getChave() {
-        return chave;
-    }
-
-    public void setChave(int chave) {
-        this.chave = chave;
-    }
-
-    public void setArvore(ArvoreZ arvore) {
-        this.arvore = arvore;
-    }
-}
-
-class ArvoreZ {
-    private NoZ raiz;
-    private int qtComps;
-
-    public ArvoreZ(){
-        raiz = null;
-        qtComps = 0;
-    }
-
-    public void inserir(Show show){
-        this.raiz = inserir(raiz, show);
-    }
-
-    private NoZ inserir(NoZ atual, Show show){
-        if(atual == null){
-            return new NoZ(show);
+    public Tabela() {
+        // Construtor padrão
+        tabela = new Show[totalTam];
+        for (int i = 0; i < totalTam; i++) {
+            tabela[i] = null;
         }
-        // Se encontrar um NO vazio, insere o novo no
-        // Procura um no vazio a depender da ordem alfabetica
-        if(show.getTitle().compareTo(atual.getChave()) < 0){
-            atual.setEsq(inserir(atual.getEsq(), show));
-        }
-        else if(show.getTitle().compareTo(atual.getChave()) > 0){
-            atual.setDir(inserir(atual.getDir(), show));
-        }
-        return atual;
+        this.comps = 0;
     }
 
-    public boolean pesquisar(String title){
-        return pesquisar(raiz, title);
+    public int hash(String title) {
+        // Função que calcula a hash de um title
+        int soma = 0;
+        for (int i = 0; i < title.length(); i++) {
+            soma += (int) title.charAt(i);
+        }
+        return soma % tamTab;
     }
 
-    private boolean pesquisar(NoZ atual, String title){
-        Boolean encontrado = false;
-        if(atual != null){
-            qtComps++;
-            // Navega pelos Nos considerando o case
-            if(title.compareTo(atual.getChave()) < 0){
-                System.out.printf(" esq");
-                encontrado = pesquisar(atual.getEsq(), title);
+    public void inserir(Show show) {
+        // utiliza do title para buscar na hash a posição do show
+        int hash = hash(show.getTitle());
+        if (tabela[hash] == null) {
+            tabela[hash] = show;
+        } else if (tabela[hash] == show) {
+            return;
+        } else {
+            // Se o hash ja estiver ocupado, insere na primeira posição vazia que encontrar na reserva
+            int j = tamTab;
+            while (j < totalTam) {
+                if (tabela[j] == null) {
+                    tabela[j] = show;
+                    j = totalTam;
+                }
+                j++;
             }
-            else if(title.compareTo(atual.getChave()) > 0){
-                qtComps++;
-                System.out.printf(" dir");
-                encontrado = pesquisar(atual.getDir(), title);
-            }
-            else{
-                qtComps++;
-                encontrado = true;
+        }
+    }
+
+    public boolean pesquisar(String title) {
+        // utiliza do title para buscar na hash a posição do show
+        int hash = hash(title);
+        boolean encontrado = false;
+        comps++;
+        System.out.printf(" (Posicao: %d)", hash);
+        // Verica se a posição na tabela é null, para economizar comparações
+        // desnecessarias
+        if (tabela[hash] == null) {
+            encontrado = false;
+        } else if (tabela[hash].getTitle().equals(title)) {
+            encontrado = true;
+        } else {
+            int i = tamTab;
+            // Se o elemento não foi encontrado na hash, busca na reserva até o final
+            while (i < totalTam && !encontrado) {
+                comps++;
+                if (tabela[i].getTitle().equals(title)) {
+                    encontrado = true;
+                }
+                i++;
             }
         }
         return encontrado;
-    }
-}
-
-class ArvoreXY {
-    // Classe de arvore, com os metodos padrões e adaptados de arvores binarias
-    private NoXY raiz;
-    private int qtComps;
-
-    public ArvoreXY(){
-        inserir(7);
     }
 
     public int getComps() {
-        return qtComps;
-    }
-
-    public void inserir(int valor){
-        this.raiz = inserir(raiz, valor);
-    }
-
-    private NoXY inserir(NoXY atual, int valor){
-        if(atual == null){
-            return new NoXY(valor);
-        }
-        // Se encontrar um NO vazio, insere o novo no
-        // Procura um no vazio a depender da ordem alfabetica
-        if(valor < atual.getChave()){
-            atual.setEsq(inserir(atual.getEsq(), valor));
-        }
-        else if(valor > atual.getChave()){
-            atual.setDir(inserir(atual.getDir(), valor));
-        }
-        return atual;
-    }
-
-    public boolean pesquisar(String nome){
-        // Chama a função recursiva para navegar na arvore, e começa a imprimir o caminho
-        System.out.printf("=>raiz ");
-        return pesquisar(raiz, nome);
-    }
-
-    private boolean pesquisar(NoXY atual, String nome){
-        Boolean encontrado = false;
-        if(atual != null){
-            if(atual.)
-        }
-        return encontrado;
+        return comps;
     }
 }
 
 public class Principal {
-    public static boolean ehFim(String entrada){
+    public static boolean ehFim(String entrada) {
         // Função responsavel por verificar se a entrada recebida é FIM
         Boolean fim = false;
-        if(entrada.length() == 3){
-            if(entrada.charAt(0) == 'F' && entrada.charAt(1) == 'I' && entrada.charAt(2) == 'M'){
+        if (entrada.length() == 3) {
+            if (entrada.charAt(0) == 'F' && entrada.charAt(1) == 'I' && entrada.charAt(2) == 'M') {
                 fim = true;
             }
         }
         return fim;
     }
 
-    public static void main(String[] args){
+    public static void main(String[] args) {
         // Inicia o scanner com o UTF-8 para conseguir ler todos os caracteres
         Scanner ler = new Scanner(System.in, "UTF-8");
         // Registra o inicio do processamento do sistema
         long inicio = System.nanoTime();
         String entrada = ler.nextLine();
-        ArvoreXY arvore = new ArvoreXY();
-        while(!ehFim(entrada)){
+        Tabela tabelaHash = new Tabela();
+        while (!ehFim(entrada)) {
             Show show = new Show(entrada);
-            arvore.inserir(show);
+            tabelaHash.inserir(show);
             entrada = ler.nextLine();
         }
         entrada = ler.nextLine();
-        while(!ehFim(entrada)){
-            if(arvore.pesquisar(entrada)){
+        while (!ehFim(entrada)) {
+            if (tabelaHash.pesquisar(entrada)) {
                 System.out.println(" SIM");
-            }
-            else{
+            } else {
                 System.out.println(" NAO");
             }
             entrada = ler.nextLine();
@@ -478,12 +363,11 @@ public class Principal {
         // calcula o tempo gasto, e inicia o processo de escrita no arquivo
         long fim = System.nanoTime();
         double tempoExec = (fim - inicio) / 1e6;
-        try{
-            FileWriter arq = new FileWriter("869899_sequencial.txt");
-            arq.write("869899" + '\t' + tempoExec + '\t' + arvore.getComps());
+        try {
+            FileWriter arq = new FileWriter("869899_hashReserva.txt");
+            arq.write("869899" + '\t' + tempoExec + '\t' + tabelaHash.getComps());
             arq.close();
-        }
-        catch(IOException e){
+        } catch (IOException e) {
             System.out.println(e.getMessage());
         }
     }

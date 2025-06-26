@@ -249,227 +249,270 @@ class Show {
     }
 }
 
-class NoZ{
-    private String chave;
-    private NoZ esq;
-    private NoZ dir;
-
-    public NoZ(String title){
-        this.chave = title;
-        this.esq = null;
-        this.dir = null;
-    }
-
-    public NoZ(Show show){
-        this.chave = show.getTitle();
-        this.esq = null;
-        this.dir = null;
-    }
-
-    public String getChave() {
-        return chave;
-    }
-
-    public NoZ getDir() {
-        return dir;
-    }
-
-    public NoZ getEsq() {
-        return esq;
-    }
-
-    public void setChave(String chave) {
-        this.chave = chave;
-    }
-
-    public void setDir(NoZ dir) {
-        this.dir = dir;
-    }
-
-    public void setEsq(NoZ esq) {
-        this.esq = esq;
-    }
-}
-
-class NoXY {
+class No {
     // Classe responsal pelos nos da arvore binaria
-    private int chave;
-    private NoXY esq;
-    private NoXY dir;
-    private ArvoreZ arvore;
+    private Show show;
+    private boolean cor;
+    private No esq;
+    private No dir;
+    private No pai;
 
-    public NoXY(int valor){
-        this.chave = valor;
+    public No(Show show) {
+        this.show = show;
         this.esq = null;
         this.dir = null;
-        arvore = new ArvoreZ();
+        this.cor = true;
+        this.pai = null;
     }
 
-    public NoXY getDir() {
+    public No(Show show, No nil) {
+        this.show = show;
+        this.cor = true;
+        this.esq = nil;
+        this.dir = nil;
+        this.pai = nil;
+    }
+
+    public No getDir() {
         return dir;
     }
 
-    public NoXY getEsq() {
+    public No getEsq() {
         return esq;
     }
 
-    public ArvoreZ getArvore() {
-        return arvore;
-    }
-
-    public void setDir(NoXY dir) {
+    public void setDir(No dir) {
         this.dir = dir;
     }
 
-    public void setEsq(NoXY esq) {
+    public void setEsq(No esq) {
         this.esq = esq;
     }
 
-    public int getChave() {
-        return chave;
+    public Show getShow() {
+        return show;
     }
 
-    public void setChave(int chave) {
-        this.chave = chave;
+    public void setShow(Show show) {
+        this.show = show;
     }
 
-    public void setArvore(ArvoreZ arvore) {
-        this.arvore = arvore;
-    }
-}
-
-class ArvoreZ {
-    private NoZ raiz;
-    private int qtComps;
-
-    public ArvoreZ(){
-        raiz = null;
-        qtComps = 0;
+    public void setCor(boolean cor) {
+        this.cor = cor;
     }
 
-    public void inserir(Show show){
-        this.raiz = inserir(raiz, show);
+    public boolean getCor() {
+        return this.cor;
     }
 
-    private NoZ inserir(NoZ atual, Show show){
-        if(atual == null){
-            return new NoZ(show);
-        }
-        // Se encontrar um NO vazio, insere o novo no
-        // Procura um no vazio a depender da ordem alfabetica
-        if(show.getTitle().compareTo(atual.getChave()) < 0){
-            atual.setEsq(inserir(atual.getEsq(), show));
-        }
-        else if(show.getTitle().compareTo(atual.getChave()) > 0){
-            atual.setDir(inserir(atual.getDir(), show));
-        }
-        return atual;
+    public No getPai() {
+        return pai;
     }
 
-    public boolean pesquisar(String title){
-        return pesquisar(raiz, title);
-    }
-
-    private boolean pesquisar(NoZ atual, String title){
-        Boolean encontrado = false;
-        if(atual != null){
-            qtComps++;
-            // Navega pelos Nos considerando o case
-            if(title.compareTo(atual.getChave()) < 0){
-                System.out.printf(" esq");
-                encontrado = pesquisar(atual.getEsq(), title);
-            }
-            else if(title.compareTo(atual.getChave()) > 0){
-                qtComps++;
-                System.out.printf(" dir");
-                encontrado = pesquisar(atual.getDir(), title);
-            }
-            else{
-                qtComps++;
-                encontrado = true;
-            }
-        }
-        return encontrado;
+    public void setPai(No pai) {
+        this.pai = pai;
     }
 }
 
-class ArvoreXY {
+class Arvore {
     // Classe de arvore, com os metodos padrões e adaptados de arvores binarias
-    private NoXY raiz;
+    private No raiz;
+    private No nil;
     private int qtComps;
 
-    public ArvoreXY(){
-        inserir(7);
+    public Arvore() {
+        nil = new No(null);
+        // NIL aponta para si mesmo para evitar NullPointerExceptions
+        nil.setCor(false);
+        nil.setEsq(nil);
+        nil.setDir(nil);
+        nil.setPai(nil);
+        this.raiz = nil;
+        this.qtComps = 0;
     }
 
-    public int getComps() {
+    public int getQtComps() {
         return qtComps;
     }
 
-    public void inserir(int valor){
-        this.raiz = inserir(raiz, valor);
-    }
-
-    private NoXY inserir(NoXY atual, int valor){
-        if(atual == null){
-            return new NoXY(valor);
-        }
-        // Se encontrar um NO vazio, insere o novo no
-        // Procura um no vazio a depender da ordem alfabetica
-        if(valor < atual.getChave()){
-            atual.setEsq(inserir(atual.getEsq(), valor));
-        }
-        else if(valor > atual.getChave()){
-            atual.setDir(inserir(atual.getDir(), valor));
-        }
-        return atual;
-    }
-
-    public boolean pesquisar(String nome){
-        // Chama a função recursiva para navegar na arvore, e começa a imprimir o caminho
+    public boolean pesquisar(String nome) {
+        // Chama a função recursiva para navegar na arvore, e começa a imprimir o
+        // caminho
         System.out.printf("=>raiz ");
         return pesquisar(raiz, nome);
     }
 
-    private boolean pesquisar(NoXY atual, String nome){
+    private boolean pesquisar(No atual, String nome) {
         Boolean encontrado = false;
-        if(atual != null){
-            if(atual.)
+        if (atual != nil) {
+            qtComps++;
+            // Navega pelos Nos considerando o case
+            int comp = nome.compareTo(atual.getShow().getTitle());
+            if (comp < 0) {
+                System.out.printf(" esq");
+                encontrado = pesquisar(atual.getEsq(), nome);
+            } else if (comp > 0) {
+                qtComps++;
+                System.out.printf(" dir");
+                encontrado = pesquisar(atual.getDir(), nome);
+            } else {
+                qtComps++;
+                encontrado = true;  
+            }
         }
         return encontrado;
+    }
+
+    public void inserir(Show show) {
+        No novo = new No(show, nil);
+        No pai = nil;
+        No i = this.raiz;
+        while (i != nil) {
+            pai = i;
+            int comp = novo.getShow().getTitle().compareTo(i.getShow().getTitle());
+            if (comp < 0) {
+                i = i.getEsq();
+            } else if (comp > 0) {
+                i = i.getDir();
+            } else {
+                return;
+            }
+        }
+        novo.setPai(pai);
+        if (pai == nil) {
+            this.raiz = novo;
+        } else {
+            int cmp = novo.getShow().getTitle().compareTo(pai.getShow().getTitle());
+            if (cmp < 0) {
+                pai.setEsq(novo);
+            } else {
+                pai.setDir(novo);
+            }
+        }
+        revisaInsercao(novo);
+    }
+
+    private void rodaDir(No no) {
+        No noEsq = no.getEsq();
+        no.setEsq(noEsq.getDir());
+        if (noEsq.getDir() != nil) {
+            noEsq.getDir().setPai(no);
+        }
+        noEsq.setPai(no.getPai());
+        if (no.getPai() == nil) {
+            this.raiz = noEsq;
+        } else if (no == no.getPai().getEsq()) {
+            no.getPai().setEsq(noEsq);
+        } else {
+            no.getPai().setDir(noEsq);
+        }
+        noEsq.setDir(no);
+        no.setPai(noEsq);
+    }
+
+    private void rodaEsq(No no) {
+        // Função responsavel por fazer a rotação para a esquerda
+        No noDir = no.getDir();
+        no.setDir(noDir.getEsq());
+        if (noDir.getEsq() != nil) {
+            noDir.getEsq().setPai(no);
+        }
+        noDir.setPai(no.getPai());
+        if (no.getPai() == nil) {
+            this.raiz = noDir;
+        } else if (no == no.getPai().getEsq()) {
+            no.getPai().setEsq(noDir);
+        } else {
+            no.getPai().setDir(noDir);
+        }
+        noDir.setEsq(no);
+        no.setPai(noDir);
+    }
+
+    private void revisaInsercao(No atual) {
+        while (atual.getPai().getCor() == true) {
+
+            // Se o pai é filho esquerdo do avo
+            if (atual.getPai() == atual.getPai().getPai().getEsq()) {
+                No tio = atual.getPai().getPai().getDir();
+
+                // Tio é vermelho
+                if (tio.getCor() == true) {
+                    atual.getPai().setCor(false);
+                    tio.setCor(false);
+                    atual.getPai().getPai().setCor(true);
+                    atual = atual.getPai().getPai();
+                } else {
+                    // Tio é preto e atual é filho direito
+                    if (atual == atual.getPai().getDir()) {
+                        atual = atual.getPai();
+                        rodaEsq(atual);
+                    }
+
+                    // Tio é preto e atual é filho esquerdo
+                    atual.getPai().setCor(false);
+                    atual.getPai().getPai().setCor(true);
+                    rodaDir(atual.getPai().getPai());
+                }
+            }
+            // Se o pai é o filho direito
+            else {
+                No tio = atual.getPai().getPai().getEsq();
+
+                // Tio é vermelho
+                if (tio.getCor() == true) {
+                    atual.getPai().setCor(false);
+                    tio.setCor(false);
+                    atual.getPai().getPai().setCor(true);
+                    atual = atual.getPai().getPai();
+                } else {
+                    // Tio é preto e atual é filho esquerdo
+                    if (atual == atual.getPai().getEsq()) {
+                        atual = atual.getPai();
+                        rodaDir(atual);
+                    }
+
+                    // Tio é preto e atual é filho direito
+                    atual.getPai().setCor(false);
+                    atual.getPai().getPai().setCor(true);
+                    rodaEsq(atual.getPai().getPai());
+                }
+            }
+        }
+        // Garante que a raiz sempre seja preta
+        this.raiz.setCor(false);
     }
 }
 
 public class Principal {
-    public static boolean ehFim(String entrada){
+    public static boolean ehFim(String entrada) {
         // Função responsavel por verificar se a entrada recebida é FIM
         Boolean fim = false;
-        if(entrada.length() == 3){
-            if(entrada.charAt(0) == 'F' && entrada.charAt(1) == 'I' && entrada.charAt(2) == 'M'){
+        if (entrada.length() == 3) {
+            if (entrada.charAt(0) == 'F' && entrada.charAt(1) == 'I' && entrada.charAt(2) == 'M') {
                 fim = true;
             }
         }
         return fim;
     }
 
-    public static void main(String[] args){
+    public static void main(String[] args) {
         // Inicia o scanner com o UTF-8 para conseguir ler todos os caracteres
         Scanner ler = new Scanner(System.in, "UTF-8");
         // Registra o inicio do processamento do sistema
         long inicio = System.nanoTime();
         String entrada = ler.nextLine();
-        ArvoreXY arvore = new ArvoreXY();
-        while(!ehFim(entrada)){
+        Arvore arvore = new Arvore();
+        while (!ehFim(entrada)) {
             Show show = new Show(entrada);
             arvore.inserir(show);
             entrada = ler.nextLine();
         }
         entrada = ler.nextLine();
-        while(!ehFim(entrada)){
-            if(arvore.pesquisar(entrada)){
+        while (!ehFim(entrada)) {
+            if (arvore.pesquisar(entrada)) {
                 System.out.println(" SIM");
-            }
-            else{
+            } else {
                 System.out.println(" NAO");
             }
             entrada = ler.nextLine();
@@ -478,12 +521,11 @@ public class Principal {
         // calcula o tempo gasto, e inicia o processo de escrita no arquivo
         long fim = System.nanoTime();
         double tempoExec = (fim - inicio) / 1e6;
-        try{
-            FileWriter arq = new FileWriter("869899_sequencial.txt");
-            arq.write("869899" + '\t' + tempoExec + '\t' + arvore.getComps());
+        try {
+            FileWriter arq = new FileWriter("869899_avinegra.txt");
+            arq.write("869899" + '\t' + tempoExec + '\t' + arvore.getQtComps());
             arq.close();
-        }
-        catch(IOException e){
+        } catch (IOException e) {
             System.out.println(e.getMessage());
         }
     }
