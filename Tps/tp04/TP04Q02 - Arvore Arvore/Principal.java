@@ -60,6 +60,10 @@ class Show {
         this.listed_in = listed_in.clone();
     }
 
+    public int getRelease_year() {
+        return release_year;
+    }
+
     public String getType() {
         return this.type;
     }
@@ -100,11 +104,7 @@ class Show {
         return show_ID;
     }
 
-    public int getRelease_year() {
-        return release_year;
-    }
-
-    private static final SimpleDateFormat dateFormat = new SimpleDateFormat("MMMM d,yyyy", Locale.ENGLISH);
+    private static final SimpleDateFormat dateFormat = new SimpleDateFormat("MMMM d, yyyy", Locale.ENGLISH);
 
     public Show() {
         show_ID = "NaN";
@@ -236,7 +236,7 @@ class Show {
 
     public void imprimir() {
         // antes de começar a impressão, ordena os vetores que precisam ser ordenados
-        SimpleDateFormat date = new SimpleDateFormat("MMMM d,yyyy", Locale.ENGLISH);
+        SimpleDateFormat date = new SimpleDateFormat("MMMM d, yyyy", Locale.ENGLISH);
         String dateFormatada;
         if (getDate_added() != null) {
             dateFormatada = date.format(getDate_added());
@@ -249,97 +249,72 @@ class Show {
     }
 }
 
-class NoZ{
+class NoZ {
+    // No responsavel pelo no de nivel 2, com o title como chave
     private String chave;
-    private NoZ esq;
-    private NoZ dir;
+    private NoZ esq, dir;
 
-    public NoZ(String title){
-        this.chave = title;
-        this.esq = null;
-        this.dir = null;
-    }
-
-    public NoZ(Show show){
+    public NoZ(Show show) {
         this.chave = show.getTitle();
-        this.esq = null;
-        this.dir = null;
     }
 
-    public String getChave() {
+    public String getChave() { 
         return chave;
-    }
-
-    public NoZ getDir() {
-        return dir;
     }
 
     public NoZ getEsq() {
         return esq;
     }
 
-    public void setChave(String chave) {
-        this.chave = chave;
-    }
-
-    public void setDir(NoZ dir) {
-        this.dir = dir;
+    public NoZ getDir() {
+        return dir;
     }
 
     public void setEsq(NoZ esq) {
         this.esq = esq;
     }
+
+    public void setDir(NoZ dir) {
+        this.dir = dir;
+    }
 }
 
 class ArvoreZ {
+    // No responsavel pelo no de nivel 2, com o title como chave
     private NoZ raiz;
     private int qtComps;
 
-    public ArvoreZ(){
-        raiz = null;
-        qtComps = 0;
+    public void inserir(Show show) {
+        raiz = inserir(raiz, show);
     }
 
-    public void inserir(Show show){
-        this.raiz = inserir(raiz, show);
-    }
-
-    private NoZ inserir(NoZ atual, Show show){
-        if(atual == null){
-            return new NoZ(show);
-        }
-        if(show.getTitle().compareTo(atual.getChave()) < 0){
+    private NoZ inserir(NoZ atual, Show show) {
+        // Insere pela chave title
+        if (atual == null) return new NoZ(show);
+        if (show.getTitle().compareTo(atual.getChave()) < 0)
             atual.setEsq(inserir(atual.getEsq(), show));
-        }
-        else if(show.getTitle().compareTo(atual.getChave()) > 0){
+        else if (show.getTitle().compareTo(atual.getChave()) > 0)
             atual.setDir(inserir(atual.getDir(), show));
-        }
         return atual;
     }
 
-    public boolean pesquisar(String title){
+    public boolean pesquisar(String title) {
         qtComps = 0;
         return pesquisar(raiz, title);
     }
 
-    private boolean pesquisar(NoZ atual, String title){
-        Boolean encontrado = false;
-        if(atual != null){
-            qtComps++;
-            int cmp = title.compareTo(atual.getChave());
-            if(cmp < 0){
-                System.out.printf(" esq"); // Minúsculas e um espaço
-                encontrado = pesquisar(atual.getEsq(), title);
-            }
-            else if(cmp > 0){
-                System.out.printf(" dir"); // Minúsculas e um espaço
-                encontrado = pesquisar(atual.getDir(), title);
-            }
-            else{
-                encontrado = true;
-            }
-        }
-        return encontrado;
+    private boolean pesquisar(NoZ atual, String title) {
+        // Pesquisa pela arvore, mas agora com a chave title
+        if (atual == null) return false;
+        qtComps++;
+        int cmp = title.compareTo(atual.getChave());
+        if (cmp < 0) {
+            System.out.print(" esq");
+            return pesquisar(atual.getEsq(), title);
+        } else if (cmp > 0) {
+            System.out.print(" dir");
+            return pesquisar(atual.getDir(), title);
+        } else return true;
     }
 
     public int getQtComps() {
@@ -348,48 +323,37 @@ class ArvoreZ {
 }
 
 class NoXY {
+    // Classe No do primeiro nivel de no
     private int chave;
-    private NoXY esq;
-    private NoXY dir;
-    private ArvoreZ arvoreZ;
+    private NoXY esq, dir;
+    private ArvoreZ arvoreZ = new ArvoreZ();
 
-    public NoXY(int valor){
+    public NoXY(int valor) {
         this.chave = valor;
-        this.esq = null;
-        this.dir = null;
-        arvoreZ = new ArvoreZ();
     }
 
-    public NoXY getDir() {
-        return dir;
+    public int getChave() { 
+        return chave;
     }
 
-    public NoXY getEsq() {
-        return esq;
+    public NoXY getEsq() { 
+        return esq; 
     }
 
-    public ArvoreZ getArvoreZ() {
-        return arvoreZ;
+    public NoXY getDir() { 
+        return dir; 
     }
 
-    public void setDir(NoXY dir) {
-        this.dir = dir;
+    public ArvoreZ getArvoreZ() { 
+        return arvoreZ; 
     }
 
     public void setEsq(NoXY esq) {
         this.esq = esq;
     }
 
-    public int getChave() {
-        return chave;
-    }
-
-    public void setChave(int chave) {
-        this.chave = chave;
-    }
-
-    public void setArvoreZ(ArvoreZ arvoreZ) {
-        this.arvoreZ = arvoreZ;
+    public void setDir(NoXY dir) { 
+        this.dir = dir;
     }
 }
 
@@ -397,99 +361,59 @@ class ArvoreXY {
     private NoXY raiz;
     private int totalComps;
 
-    public ArvoreXY(){
-        this.totalComps = 0;
-        inserirNoInicial(7);
-        inserirNoInicial(3);
-        inserirNoInicial(11);
-        inserirNoInicial(1);
-        inserirNoInicial(5);
-        inserirNoInicial(9);
-        inserirNoInicial(13);
-        inserirNoInicial(0);
-        inserirNoInicial(2);
-        inserirNoInicial(4);
-        inserirNoInicial(6);
-        inserirNoInicial(8);
-        inserirNoInicial(10);
-        inserirNoInicial(12);
-        inserirNoInicial(14);
+    public ArvoreXY() {
+        // Garante que a estrutura da arvore ja esta pronta antes das inserções
+        int[] iniciais = {7, 3, 11, 1, 5, 9, 13, 0, 2, 4, 6, 8, 10, 12, 14};
+        for (int i : iniciais) inserirNoInicial(i);
     }
 
-    private void inserirNoInicial(int valor){
-        this.raiz = inserirNoInicial(raiz, valor);
+    private void inserirNoInicial(int valor) {
+        raiz = inserirNoInicial(raiz, valor);
     }
 
-    private NoXY inserirNoInicial(NoXY atual, int valor){
-        if(atual == null){
-            return new NoXY(valor);
-        }
-        if(valor < atual.getChave()){
-            atual.setEsq(inserirNoInicial(atual.getEsq(), valor));
-        }
-        else if(valor > atual.getChave()){
-            atual.setDir(inserirNoInicial(atual.getDir(), valor));
-        }
+    private NoXY inserirNoInicial(NoXY atual, int valor) {
+        if (atual == null) return new NoXY(valor);
+        if (valor < atual.getChave()) atual.setEsq(inserirNoInicial(atual.getEsq(), valor));
+        else if (valor > atual.getChave()) atual.setDir(inserirNoInicial(atual.getDir(), valor));
         return atual;
+    }
+
+    public void inserirShow(Show show) {
+        int chaveXY = show.getRelease_year() % 15;
+        inserirShow(raiz, show, chaveXY);
+    }
+
+    private void inserirShow(NoXY atual, Show show, int chaveXY) {
+        // insere o show
+        if (atual == null) return;
+        if (chaveXY < atual.getChave()) inserirShow(atual.getEsq(), show, chaveXY);
+        else if (chaveXY > atual.getChave()) inserirShow(atual.getDir(), show, chaveXY);
+        else atual.getArvoreZ().inserir(show);
+    }
+
+    public boolean pesquisar(String title) {
+        // Chama o pesquisar, e ja inicia a impressão da saida
+        System.out.print("raiz");
+        totalComps = 0;
+        return pesquisar(raiz, title);
+    }
+
+    private boolean pesquisar(NoXY atual, String title) {
+        if (atual == null) return false;
+        // A cada iteração, conta as comparações
+        totalComps++;
+        boolean encontrado = atual.getArvoreZ().pesquisar(title);
+        totalComps += atual.getArvoreZ().getQtComps();
+        // redireciona para o lado correto
+        if (encontrado) return true;
+        System.out.print("  ESQ");
+        if (pesquisar(atual.getEsq(), title)) return true;
+        System.out.print("  DIR");
+        return pesquisar(atual.getDir(), title);
     }
 
     public int getComps() {
         return totalComps;
-    }
-
-    public void inserirShow(Show show){
-        int chaveXY = show.getRelease_year() % 15; 
-        inserirShow(raiz, show, chaveXY);
-    }
-
-    private void inserirShow(NoXY atual, Show show, int chaveXY){
-        if(atual == null){
-            return;
-        }
-
-        if(chaveXY < atual.getChave()){
-            inserirShow(atual.getEsq(), show, chaveXY);
-        }
-        else if(chaveXY > atual.getChave()){
-            inserirShow(atual.getDir(), show, chaveXY);
-        }
-        else { // Chave XY encontrada, insere na ArvoreZ associada
-            atual.getArvoreZ().inserir(show);
-        }
-    }
-
-    public boolean pesquisar(String title){
-        System.out.printf("raiz");
-        totalComps = 0;
-        return pesquisarRecursivo(raiz, title);
-    }
-
-    private boolean pesquisarRecursivo(NoXY atual, String title){
-        boolean encontrado = false;
-
-        if (atual != null) {
-            totalComps++;
-
-            // Primeiro, tenta pesquisar na ArvoreZ do nó atual
-            boolean foundInCurrentZ = atual.getArvoreZ().pesquisar(title);// Faremos o "mostrar" na segunda porque ela é organizada pelo atributo title. [cite: 42]
-            totalComps += atual.getArvoreZ().getQtComps();
-
-            if (foundInCurrentZ) {
-                return true;
-            }
-
-            // Se não encontrou na ArvoreZ atual, continua o percurso na ArvoreXY
-        
-            if (atual.getEsq() != null) {
-                System.out.printf("  ESQ"); 
-                encontrado = pesquisarRecursivo(atual.getEsq(), title);
-            }
-            if (!encontrado && atual.getDir() != null) {
-                System.out.printf("  DIR"); 
-                encontrado = pesquisarRecursivo(atual.getDir(), title);
-            }
-        }
-        return encontrado;
     }
 }
 
@@ -514,7 +438,7 @@ public class Principal {
         ArvoreXY arvore = new ArvoreXY(); 
         while(!ehFim(entrada)){
             Show show = new Show(entrada);
-            arvore.inserirShow(show);
+            arvore.inserirShow(show); 
             entrada = ler.nextLine();
         }
         entrada = ler.nextLine();

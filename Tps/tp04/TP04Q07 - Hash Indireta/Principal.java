@@ -250,6 +250,7 @@ class Show {
 }
 
 class No{
+    // No da lista
     private Show show;
     public No prox;
 
@@ -264,6 +265,7 @@ class No{
 }
 
 class Lista{
+    // Lista que contem os shows
     private No p, u;
 
     public Lista(){
@@ -296,6 +298,7 @@ class Lista{
 }
 
 class Tabela {
+    // Classe do hash
     private Lista tabela[];
     private final int tamTab = 21;
     private int comps;

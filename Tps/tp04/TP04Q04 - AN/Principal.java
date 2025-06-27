@@ -453,10 +453,10 @@ class Arvore {
 
                 // Caso 1: Tio é vermelho
                 if (tio.getCor() == true) {
-                    atual.getPai().setCor(false); // Pai fica preto
-                    tio.setCor(false); // Tio fica preto
-                    atual.getPai().getPai().setCor(true); // Avô fica vermelho
-                    atual = atual.getPai().getPai(); // Move para o avô
+                    atual.getPai().setCor(false);
+                    tio.setCor(false);
+                    atual.getPai().getPai().setCor(true);
+                    atual = atual.getPai().getPai();
                 } else {
                     // Caso 2: atual é filho direito (zig-zag)
                     if (atual == atual.getPai().getDir()) {
@@ -464,9 +464,9 @@ class Arvore {
                         rodaEsq(atual);
                     }
                     // Caso 3: atual é filho esquerdo (zig-zig)
-                    atual.getPai().setCor(false); // Pai fica preto
-                    atual.getPai().getPai().setCor(true); // Avô fica vermelho
-                    rodaDir(atual.getPai().getPai()); // Rotação à direita no avô
+                    atual.getPai().setCor(false);
+                    atual.getPai().getPai().setCor(true);
+                    rodaDir(atual.getPai().getPai());
                 }
             } else {
                 // Pai é filho direito do avô
@@ -474,10 +474,10 @@ class Arvore {
 
                 // Caso 1: Tio é vermelho
                 if (tio.getCor() == true) {
-                    atual.getPai().setCor(false); // Pai fica preto
-                    tio.setCor(false); // Tio fica preto
-                    atual.getPai().getPai().setCor(true); // Avô fica vermelho
-                    atual = atual.getPai().getPai(); // Move para o avô
+                    atual.getPai().setCor(false);
+                    tio.setCor(false);
+                    atual.getPai().getPai().setCor(true);
+                    atual = atual.getPai().getPai();
                 } else {
                     // Caso 2: atual é filho esquerdo (zig-zag)
                     if (atual == atual.getPai().getEsq()) {
@@ -485,9 +485,9 @@ class Arvore {
                         rodaDir(atual);
                     }
                     // Caso 3: atual é filho direito (zig-zig)
-                    atual.getPai().setCor(false); // Pai fica preto
-                    atual.getPai().getPai().setCor(true); // Avô fica vermelho
-                    rodaEsq(atual.getPai().getPai()); // Rotação à esquerda no avô
+                    atual.getPai().setCor(false);
+                    atual.getPai().getPai().setCor(true);
+                    rodaEsq(atual.getPai().getPai());
                 }
             }
         }
